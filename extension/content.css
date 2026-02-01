@@ -1,0 +1,99 @@
+/* SOTA Hunter - Content Script Styles */
+
+/* ── Tune Button ─────────────────────────────────────────────────── */
+
+.sota-hunter-tune-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 6px;
+  padding: 2px 8px;
+  border: 1px solid #2196f3;
+  border-radius: 3px;
+  background: #2196f3;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  vertical-align: middle;
+  line-height: 1.4;
+  transition: background 0.2s, border-color 0.2s, transform 0.1s;
+  white-space: nowrap;
+}
+
+.sota-hunter-tune-btn:hover {
+  background: #1976d2;
+  border-color: #1976d2;
+  transform: scale(1.05);
+}
+
+.sota-hunter-tune-btn:active {
+  transform: scale(0.95);
+}
+
+.sota-hunter-tune-btn svg {
+  flex-shrink: 0;
+}
+
+/* Pending state */
+.sota-hunter-tune-pending {
+  background: #ff9800;
+  border-color: #ff9800;
+  cursor: wait;
+  opacity: 0.8;
+}
+
+/* Success state */
+.sota-hunter-tune-success {
+  background: #4caf50;
+  border-color: #4caf50;
+}
+
+/* Error state */
+.sota-hunter-tune-error {
+  background: #f44336;
+  border-color: #f44336;
+}
+
+/* ── Filter Bar ──────────────────────────────────────────────────── */
+
+#sota-hunter-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  margin-bottom: 8px;
+  background: #e3f2fd;
+  border: 1px solid #bbdefb;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.sota-hunter-filter-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: #1565c0;
+  user-select: none;
+}
+
+.sota-hunter-filter-label input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: #2196f3;
+}
+
+.sota-hunter-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #90a4ae;
+}
+
+/* ── Duplicate Row Hiding ────────────────────────────────────────── */
+
+tr.sota-hunter-duplicate {
+  display: none !important;
+}

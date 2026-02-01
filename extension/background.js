@@ -1,0 +1,135 @@
+/**
+ * SOTA Hunter - Background Service Worker
+ *
+ * Bridges messages between the content script and the native messaging host.
+ * Manages the native messaging port lifecycle with reconnection support.
+ */
+
+let nativePort = null;
+let pendingRequests = new Map(); // requestId -> {resolve, reject, tabId}
+let requestCounter = 0;
+
+/**
+ * Connect to the native messaging host.
+ */
+function connectNativeHost() {
+  if (nativePort) {
+    return nativePort;
+  }
+
+  try {
+    nativePort = chrome.runtime.connectNative("com.sotahunter.bridge");
+
+    nativePort.onMessage.addListener((response) => {
+      console.log("Native host response:", response);
+
+      // Route response back to the appropriate requester
+      // Since native messaging is sequential, resolve the oldest pending request
+      if (pendingRequests.size > 0) {
+        const [requestId, pending] = pendingRequests.entries().next().value;
+        pendingRequests.delete(requestId);
+
+        if (pending.tabId !== null) {
+          // Response to a content script tune request
+          chrome.tabs.sendMessage(pending.tabId, {
+            type: "tuneResponse",
+            requestId: pending.originalRequestId,
+            ...response,
+          });
+        } else {
+          // Response to a popup test request
+          pending.resolve(response);
+        }
+      }
+    });
+
+    nativePort.onDisconnect.addListener(() => {
+      const error = chrome.runtime.lastError?.message || "Native host disconnected";
+      console.warn("Native host disconnected:", error);
+
+      // Reject all pending requests
+      for (const [requestId, pending] of pendingRequests) {
+        const errorResponse = { success: false, error };
+        if (pending.tabId !== null) {
+          chrome.tabs.sendMessage(pending.tabId, {
+            type: "tuneResponse",
+            requestId: pending.originalRequestId,
+            ...errorResponse,
+          });
+        } else {
+          pending.resolve(errorResponse);
+        }
+      }
+      pendingRequests.clear();
+      nativePort = null;
+    });
+
+    return nativePort;
+  } catch (e) {
+    console.error("Failed to connect to native host:", e);
+    nativePort = null;
+    return null;
+  }
+}
+
+/**
+ * Send a message to the native host and track the pending response.
+ */
+function sendToNativeHost(message, tabId, originalRequestId) {
+  return new Promise((resolve) => {
+    const port = connectNativeHost();
+    if (!port) {
+      const errorResponse = {
+        success: false,
+        error: "Cannot connect to native host. Is install.bat run?",
+      };
+      resolve(errorResponse);
+      return;
+    }
+
+    const requestId = ++requestCounter;
+    pendingRequests.set(requestId, {
+      resolve,
+      tabId,
+      originalRequestId,
+    });
+
+    // Fetch HRD settings and include them in the message
+    chrome.storage.sync.get({ hrd_host: "127.0.0.1", hrd_port: 7809 }, (settings) => {
+      const fullMessage = {
+        ...message,
+        hrd_host: settings.hrd_host,
+        hrd_port: settings.hrd_port,
+      };
+      console.log("Sending to native host:", fullMessage);
+      port.postMessage(fullMessage);
+    });
+  });
+}
+
+/**
+ * Handle messages from content scripts and popup.
+ */
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === "tune") {
+    // From content script: tune to a frequency
+    const tabId = sender.tab?.id ?? null;
+    sendToNativeHost(
+      { action: "tune", frequency: message.frequency, mode: message.mode },
+      tabId,
+      message.requestId
+    );
+    // Response will be sent asynchronously via chrome.tabs.sendMessage
+    return false;
+  }
+
+  if (message.type === "testConnection") {
+    // From popup: test the HRD connection
+    sendToNativeHost({ action: "test" }, null, null).then((response) => {
+      sendResponse(response);
+    });
+    return true; // Keep the message channel open for async response
+  }
+
+  return false;
+});
