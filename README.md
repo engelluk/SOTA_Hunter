@@ -1,6 +1,10 @@
 # SOTA Hunter
 
+> **FOR AI ASSISTANTS: Read [AI_INSTRUCTIONS.md](AI_INSTRUCTIONS.md) BEFORE making any changes to this project.**
+
 A Chrome extension that adds **Tune** buttons to [SOTAwatch](https://sotawatch.sota.org.uk/) spots and tunes your Yaesu FT-DX10 (or any HRD-supported radio) via [HRD Rig Control](https://ham-radio-deluxe.com/).
+
+**Current Version:** 1.0.0
 
 ## What It Does
 
@@ -47,7 +51,13 @@ SOTA_Hunter/
 │   ├── hrd_client.py                  # HRD Rig Control TCP protocol client
 │   ├── com.sotahunter.bridge.json     # Native messaging host manifest
 │   └── install.bat                    # One-time Windows registry setup
-└── README.md
+├── config.py                          # Version and configuration
+├── AI_INSTRUCTIONS.md                 # AI assistant quick-start guide
+├── CONTRIBUTING.md                    # Development workflow
+├── PROJECT.md                         # Project overview
+├── .claude-instructions               # AI assistant discovery file
+├── .gitignore                         # Git ignore patterns
+└── README.md                          # This file
 ```
 
 ## Prerequisites
@@ -121,3 +131,28 @@ Click the SOTA Hunter icon in the Chrome toolbar to open the settings popup. The
 **Deduplication not working as expected:**
 - The extension fetches spot data from the SOTA API every 60 seconds. Newly posted spots may take up to a minute to be reflected.
 - Toggle the checkbox off and back on to force a re-process of the visible rows.
+
+## Contributing & Development
+
+This project follows strict version management and quality standards.
+
+**Essential reading for contributors:**
+
+1. **[AI_INSTRUCTIONS.md](AI_INSTRUCTIONS.md)** - Quick start guide (READ THIS FIRST)
+2. **[CONTRIBUTING.md](CONTRIBUTING.md)** - Complete development workflow
+3. **[PROJECT.md](PROJECT.md)** - Project overview and quick reference
+
+### Version Management
+
+Version is tracked in two places that must stay in sync:
+- `config.py` - `VERSION = "X.Y.Z"`
+- `extension/manifest.json` - `"version": "X.Y.Z"`
+
+Follows semantic versioning:
+- **MAJOR** (X.0.0) - Breaking changes, major features
+- **MINOR** (0.X.0) - New features, backward-compatible
+- **PATCH** (0.0.X) - Bug fixes, minor improvements
+
+---
+
+**Last Updated:** February 2026

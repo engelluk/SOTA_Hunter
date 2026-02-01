@@ -1,0 +1,55 @@
+# Claude Code Project Instructions - SOTA Hunter
+
+**IMPORTANT: Read AI_INSTRUCTIONS.md before making ANY changes to this project**
+
+This project has strict development standards. ALL changes must follow the documented workflow.
+
+## Quick Start for AI Assistants
+
+1. **Read first (MANDATORY):**
+   - AI_INSTRUCTIONS.md (quick start guide)
+   - config.py (current version: check VERSION variable)
+   - RELEASE_NOTES.md (recent changes) - if exists
+
+2. **Before ANY change:**
+   - Create TODO list
+   - Ask user about version increment (MAJOR/MINOR/PATCH)
+   - Plan implementation
+
+3. **For EVERY change:**
+   - Update VERSION in config.py
+   - Update VERSION in extension/manifest.json (keep in sync)
+   - Update RELEASE_NOTES.md (add new version section) - if used
+   - Update README.md (version number if present)
+   - Run ALL tests
+   - Create git commit with proper format
+
+4. **Never commit:**
+   - Without updating version
+   - Without updating documentation
+   - Without running tests
+   - venv/, __pycache__, *.pyc, *.log, bridge.log files
+
+## Current State
+
+- **Version:** 1.0.0
+- **Languages:** Python (native host), JavaScript (Chrome extension)
+- **Main files:** native-host/bridge.py, extension/background.js, extension/content.js
+- **Workflow:** See AI_INSTRUCTIONS.md
+
+## Essential Files
+
+- AI_INSTRUCTIONS.md - READ THIS FIRST (quick guide)
+- CONTRIBUTING.md - Full workflow details
+- config.py - Version configuration
+- extension/manifest.json - Chrome extension version (keep in sync with config.py)
+- README.md - User documentation
+
+## Quality Standards
+
+ALWAYS: Version updates, documentation updates, testing, proper commits
+NEVER: Skip workflow, commit untested code, skip documentation
+
+---
+
+**Full details:** AI_INSTRUCTIONS.md
