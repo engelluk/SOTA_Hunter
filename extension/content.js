@@ -236,8 +236,18 @@
     pendingCallbacks.set(requestId, (response) => {
       btn.classList.remove("sota-hunter-tune-pending");
       if (response.success) {
-        btn.classList.add("sota-hunter-tune-success");
-        setTimeout(() => btn.classList.remove("sota-hunter-tune-success"), 3000);
+        if (response.mode_warning) {
+          // Frequency set OK but mode didn't change
+          btn.classList.add("sota-hunter-tune-warning");
+          btn.title = response.mode_warning;
+          setTimeout(() => {
+            btn.classList.remove("sota-hunter-tune-warning");
+            btn.title = `Tune to ${spot.frequency} MHz ${spot.mode}`;
+          }, 5000);
+        } else {
+          btn.classList.add("sota-hunter-tune-success");
+          setTimeout(() => btn.classList.remove("sota-hunter-tune-success"), 3000);
+        }
       } else {
         btn.classList.add("sota-hunter-tune-error");
         btn.title = `Error: ${response.error}`;

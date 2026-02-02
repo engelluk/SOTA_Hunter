@@ -85,19 +85,7 @@ def handle_test(request):
         port = 7809
 
     client = HRDClient(host=host, port=port)
-    try:
-        client.connect()
-        freq = client.get_frequency()
-        mode = client.get_mode()
-        client.disconnect()
-        return {
-            "success": True,
-            "message": "Connected to HRD",
-            "frequency": freq,
-            "mode": mode,
-        }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    return client.test_connection()
 
 
 def main():

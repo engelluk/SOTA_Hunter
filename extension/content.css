@@ -49,6 +49,13 @@
   border-color: #4caf50;
 }
 
+/* Warning state (frequency OK, mode didn't change) */
+.sota-hunter-tune-warning {
+  background: #ffc107;
+  border-color: #ffc107;
+  color: #333;
+}
+
 /* Error state */
 .sota-hunter-tune-error {
   background: #f44336;
