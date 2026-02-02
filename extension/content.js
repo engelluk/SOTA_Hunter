@@ -18,6 +18,7 @@
   let pendingCallbacks = new Map(); // requestId -> callback
   let requestCounter = 0;
   let processTimeout = null;
+  const summitCache = new Map(); // summitRef -> {name, altitude, locator}
 
   // ── API Data Fetching ──────────────────────────────────────────────
 
@@ -44,6 +45,33 @@
       }
     }
     return latest;
+  }
+
+  /**
+   * Fetch summit details from the SOTA API and cache the result.
+   * Returns {name, altitude, locator} or null on failure.
+   */
+  async function fetchSummitDetails(summitRef) {
+    if (!summitRef) return null;
+    if (summitCache.has(summitRef)) return summitCache.get(summitRef);
+
+    // summitRef format: "I/TO-015" → API: /api/summits/I/TO-015
+    const url = `https://api2.sota.org.uk/api/summits/${summitRef}`;
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) return null;
+      const data = await resp.json();
+      const details = {
+        name: data.name || "",
+        altitude: data.altM != null ? data.altM : "",
+        locator: data.locator || "",
+      };
+      summitCache.set(summitRef, details);
+      return details;
+    } catch (e) {
+      console.warn("SOTA Hunter: Failed to fetch summit details for", summitRef, e);
+      return null;
+    }
   }
 
   // ── DOM Processing ─────────────────────────────────────────────────
@@ -201,6 +229,11 @@
       if (!row.querySelector(".sota-hunter-tune-btn")) {
         injectTuneButton(spot);
       }
+
+      // Inject log button if not already present
+      if (!row.querySelector(".sota-hunter-log-btn")) {
+        injectLogButton(spot);
+      }
     }
   }
 
@@ -266,10 +299,93 @@
     });
   }
 
+  /**
+   * Inject a Log button into the spot row (next to the Tune button).
+   */
+  function injectLogButton(spot) {
+    const btn = document.createElement("button");
+    btn.className = "sota-hunter-log-btn";
+    btn.title = `Log QSO with ${spot.callsign}`;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+      <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zm-3 4h4v2h-4v-2zm0 3h4v2h-4v-2zm-2-3H7v5h1v-5z"/>
+    </svg> Log`;
+
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      logSpot(spot, btn);
+    });
+
+    spot.freqCell.appendChild(btn);
+  }
+
+  /**
+   * Send a log request for the given spot. Fetches summit details first,
+   * then sends a message to the background script.
+   */
+  async function logSpot(spot, btn) {
+    const requestId = ++requestCounter;
+    btn.classList.remove("sota-hunter-log-success", "sota-hunter-log-error");
+    btn.classList.add("sota-hunter-log-pending");
+
+    // Build summit ref from API data if not parsed from DOM
+    let summitRef = spot.summitRef || "";
+    if (!summitRef && spot.callsign) {
+      const apiSpot = spotsData.find(
+        (s) => s.activatorCallsign?.toUpperCase() === spot.callsign.toUpperCase()
+      );
+      if (apiSpot) {
+        summitRef = (apiSpot.associationCode || "") + "/" + (apiSpot.summitCode || "");
+      }
+    }
+
+    // Fetch summit details for the comment field
+    let comment = "";
+    if (summitRef) {
+      const details = await fetchSummitDetails(summitRef);
+      if (details) {
+        const parts = [details.name, details.altitude ? details.altitude + "m" : "", summitRef]
+          .filter(Boolean);
+        comment = "SOTA: " + parts.join(", ");
+      } else {
+        comment = "SOTA: " + summitRef;
+      }
+    }
+
+    pendingCallbacks.set(requestId, (response) => {
+      btn.classList.remove("sota-hunter-log-pending");
+      if (response.success) {
+        btn.classList.add("sota-hunter-log-success");
+        btn.title = response.message || "QSO logged";
+        setTimeout(() => {
+          btn.classList.remove("sota-hunter-log-success");
+          btn.title = `Log QSO with ${spot.callsign}`;
+        }, 3000);
+      } else {
+        btn.classList.add("sota-hunter-log-error");
+        btn.title = `Error: ${response.error}`;
+        setTimeout(() => {
+          btn.classList.remove("sota-hunter-log-error");
+          btn.title = `Log QSO with ${spot.callsign}`;
+        }, 5000);
+      }
+    });
+
+    chrome.runtime.sendMessage({
+      type: "log",
+      requestId,
+      call: spot.callsign,
+      frequency: spot.frequency,
+      mode: spot.mode,
+      sota_ref: summitRef,
+      comment,
+    });
+  }
+
   // ── Message Handling ───────────────────────────────────────────────
 
   chrome.runtime.onMessage.addListener((message) => {
-    if (message.type === "tuneResponse" && message.requestId) {
+    if ((message.type === "tuneResponse" || message.type === "logResponse") && message.requestId) {
       const callback = pendingCallbacks.get(message.requestId);
       if (callback) {
         pendingCallbacks.delete(message.requestId);
@@ -359,8 +475,8 @@
         row.classList.remove("sota-hunter-duplicate");
         row.style.display = "";
       });
-      // Remove old tune buttons so they get refreshed data
-      document.querySelectorAll(".sota-hunter-tune-btn").forEach((btn) => btn.remove());
+      // Remove old buttons so they get refreshed data
+      document.querySelectorAll(".sota-hunter-tune-btn, .sota-hunter-log-btn").forEach((btn) => btn.remove());
       processSpots();
     }, POLL_INTERVAL);
   }

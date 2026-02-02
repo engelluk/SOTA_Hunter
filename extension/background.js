@@ -30,9 +30,10 @@ function connectNativeHost() {
         pendingRequests.delete(requestId);
 
         if (pending.tabId !== null) {
-          // Response to a content script tune request
+          // Response to a content script request — route by action type
+          const responseType = pending.action === "log" ? "logResponse" : "tuneResponse";
           chrome.tabs.sendMessage(pending.tabId, {
-            type: "tuneResponse",
+            type: responseType,
             requestId: pending.originalRequestId,
             ...response,
           });
@@ -51,8 +52,9 @@ function connectNativeHost() {
       for (const [requestId, pending] of pendingRequests) {
         const errorResponse = { success: false, error };
         if (pending.tabId !== null) {
+          const responseType = pending.action === "log" ? "logResponse" : "tuneResponse";
           chrome.tabs.sendMessage(pending.tabId, {
-            type: "tuneResponse",
+            type: responseType,
             requestId: pending.originalRequestId,
             ...errorResponse,
           });
@@ -88,10 +90,12 @@ function sendToNativeHost(message, tabId, originalRequestId) {
     }
 
     const requestId = ++requestCounter;
+    const action = message.action || "tune";
     pendingRequests.set(requestId, {
       resolve,
       tabId,
       originalRequestId,
+      action,
     });
 
     // Fetch CAT serial settings and include them in the message
@@ -120,6 +124,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       message.requestId
     );
     // Response will be sent asynchronously via chrome.tabs.sendMessage
+    return false;
+  }
+
+  if (message.type === "log") {
+    // From content script: log a QSO to HRD Logbook via UDP ADIF
+    const tabId = sender.tab?.id ?? null;
+    // Fetch logging settings and include them in the native host message
+    chrome.storage.sync.get(
+      { my_callsign: "", my_gridsquare: "", log_port: 2333 },
+      (settings) => {
+        sendToNativeHost(
+          {
+            action: "log",
+            call: message.call,
+            frequency: message.frequency,
+            mode: message.mode,
+            sota_ref: message.sota_ref,
+            comment: message.comment,
+            my_callsign: settings.my_callsign,
+            my_gridsquare: settings.my_gridsquare,
+            log_port: settings.log_port,
+          },
+          tabId,
+          message.requestId
+        );
+      }
+    );
     return false;
   }
 

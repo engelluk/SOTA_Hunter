@@ -4,27 +4,42 @@
 
 const portInput = document.getElementById("cat-port");
 const baudInput = document.getElementById("cat-baud");
+const callsignInput = document.getElementById("my-callsign");
+const gridsquareInput = document.getElementById("my-gridsquare");
+const logPortInput = document.getElementById("log-port");
 const saveBtn = document.getElementById("save-btn");
 const testBtn = document.getElementById("test-btn");
 const statusDiv = document.getElementById("status");
 
 // Load saved settings
-chrome.storage.sync.get({ cat_port: "COM7", cat_baud: 38400 }, (settings) => {
-  portInput.value = settings.cat_port;
-  baudInput.value = settings.cat_baud;
-});
+chrome.storage.sync.get(
+  { cat_port: "COM7", cat_baud: 38400, my_callsign: "", my_gridsquare: "", log_port: 2333 },
+  (settings) => {
+    portInput.value = settings.cat_port;
+    baudInput.value = settings.cat_baud;
+    callsignInput.value = settings.my_callsign;
+    gridsquareInput.value = settings.my_gridsquare;
+    logPortInput.value = settings.log_port;
+  }
+);
 
 // Save settings
 saveBtn.addEventListener("click", () => {
   const port = portInput.value.trim() || "COM7";
   const baud = parseInt(baudInput.value, 10) || 38400;
+  const myCallsign = callsignInput.value.trim().toUpperCase();
+  const myGridsquare = gridsquareInput.value.trim();
+  const logPort = parseInt(logPortInput.value, 10) || 2333;
 
-  chrome.storage.sync.set({ cat_port: port, cat_baud: baud }, () => {
-    saveBtn.textContent = "Saved!";
-    setTimeout(() => {
-      saveBtn.textContent = "Save Settings";
-    }, 1500);
-  });
+  chrome.storage.sync.set(
+    { cat_port: port, cat_baud: baud, my_callsign: myCallsign, my_gridsquare: myGridsquare, log_port: logPort },
+    () => {
+      saveBtn.textContent = "Saved!";
+      setTimeout(() => {
+        saveBtn.textContent = "Save Settings";
+      }, 1500);
+    }
+  );
 });
 
 // Test connection

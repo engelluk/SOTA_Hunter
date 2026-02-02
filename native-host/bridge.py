@@ -28,6 +28,7 @@ if sys.platform == "win32":
     msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
 
 from cat_client import CATClient
+from adif_logger import build_adif_record, send_to_hrd, freq_to_band, default_rst
 
 # Keep a single serial connection open across requests
 _client = None
@@ -95,6 +96,63 @@ def handle_test(request):
     return client.test_connection()
 
 
+def handle_log(request):
+    """Handle a QSO logging request via UDP ADIF to HRD Logbook."""
+    from datetime import datetime, timezone
+
+    call = request.get("call", "")
+    if not call:
+        return {"success": False, "error": "No callsign specified"}
+
+    freq = request.get("frequency", "")
+    mode = request.get("mode", "SSB")
+    sota_ref = request.get("sota_ref", "")
+    comment = request.get("comment", "")
+    station_callsign = request.get("my_callsign", "")
+    my_gridsquare = request.get("my_gridsquare", "")
+    port = request.get("log_port", 2333)
+
+    try:
+        port = int(port)
+    except (ValueError, TypeError):
+        port = 2333
+
+    # Normalize mode for ADIF (SSB -> USB/LSB based on frequency)
+    adif_mode = mode.upper()
+    if adif_mode == "SSB":
+        try:
+            adif_mode = "USB" if float(freq) > 7.3 else "LSB"
+        except (ValueError, TypeError):
+            adif_mode = "USB"
+
+    now = datetime.now(timezone.utc)
+    qso_date = now.strftime("%Y%m%d")
+    time_on = now.strftime("%H%M")
+
+    band = freq_to_band(freq)
+    rst = default_rst(mode)
+
+    adif = build_adif_record(
+        call=call,
+        qso_date=qso_date,
+        time_on=time_on,
+        freq=freq,
+        band=band,
+        mode=adif_mode,
+        rst_sent=rst,
+        rst_rcvd=rst,
+        sota_ref=sota_ref,
+        comment=comment,
+        station_callsign=station_callsign,
+        my_gridsquare=my_gridsquare,
+    )
+
+    logger.info("Built ADIF record:\n%s", adif)
+
+    ok, msg = send_to_hrd(adif, host="127.0.0.1", port=port)
+    return {"success": ok, "message": msg, "adif": adif}
+
+
 def main():
     logger.info("SOTA Hunter bridge started")
     while True:
@@ -109,6 +167,8 @@ def main():
                 response = handle_tune(message)
             elif action == "test":
                 response = handle_test(message)
+            elif action == "log":
+                response = handle_log(message)
             else:
                 response = {"success": False, "error": f"Unknown action: {action}"}
         except Exception as e:

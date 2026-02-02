@@ -69,7 +69,17 @@
     }
 
     .row .field:last-child {
-      flex: 0 0 80px;
+      flex: 1;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #90a4ae;
+      margin-bottom: 6px;
+      margin-top: 4px;
     }
 
     button {
@@ -153,6 +163,8 @@
     SOTA Hunter
   </h1>
 
+  <div class="section-label">Radio Control</div>
+
   <div class="row">
     <div class="field">
       <label for="cat-port">COM Port</label>
@@ -162,6 +174,24 @@
       <label for="cat-baud">Baud Rate</label>
       <input type="number" id="cat-baud" value="38400" min="4800" max="115200">
     </div>
+  </div>
+
+  <div class="section-label">QSO Logging</div>
+
+  <div class="row">
+    <div class="field">
+      <label for="my-callsign">My Callsign</label>
+      <input type="text" id="my-callsign" value="" placeholder="e.g. DM6LE">
+    </div>
+    <div class="field">
+      <label for="my-gridsquare">Grid Square</label>
+      <input type="text" id="my-gridsquare" value="" placeholder="e.g. JN59ml">
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="log-port">HRD Log Port</label>
+    <input type="number" id="log-port" value="2333" min="1" max="65535">
   </div>
 
   <button id="save-btn">Save Settings</button>
