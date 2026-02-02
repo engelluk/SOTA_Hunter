@@ -2,33 +2,35 @@
 
 > **FOR AI ASSISTANTS: Read [AI_INSTRUCTIONS.md](AI_INSTRUCTIONS.md) BEFORE making any changes to this project.**
 
-A Chrome extension that adds **Tune** buttons to [SOTAwatch](https://sotawatch.sota.org.uk/) spots and tunes your Yaesu FT-DX10 (or any HRD-supported radio) via [HRD Rig Control](https://ham-radio-deluxe.com/).
+A Chrome extension that adds **Tune** and **Log** buttons to [SOTAwatch](https://sotawatch.sota.org.uk/) spots. Tunes your Yaesu FT-DX10 via direct serial CAT and logs SOTA chase QSOs to [HRD Logbook](https://ham-radio-deluxe.com/) via UDP ADIF.
 
 **Current Version:** 1.0.0
 
 ## What It Does
 
 - **Tune buttons** appear inline next to each spot's frequency on the SOTAwatch page. Click one to instantly set your radio's VFO frequency and mode.
+- **Log buttons** appear next to each Tune button. Click one to send a complete SOTA chase QSO record to HRD Logbook via UDP ADIF (port 2333) — the same protocol used by WSJT-X, JTDX, and JS8Call. The record includes callsign, frequency, band, mode, SOTA_REF, SIG/SIG_INFO, summit name and altitude in COMMENT, and your station callsign and grid square.
+- **Summit enrichment** — when logging, the extension fetches summit details (name, altitude) from the SOTA API and includes them in the ADIF COMMENT field. Results are cached to avoid repeated lookups.
 - **Activator deduplication** filters the spot list to show only the most recent spot per activator callsign, reducing clutter. This is togglable with a checkbox above the spots table.
 - **Automatic mode mapping** translates SOTAwatch mode labels to the correct radio mode:
   - `SSB` becomes `USB` (above 10 MHz) or `LSB` (below 10 MHz)
   - `CW` stays `CW`
   - `FM`, `AM` pass through unchanged
   - `DATA`, `FT8`, `FT4`, `JS8`, `PSK` become `USB-D`
-- **Visual feedback** on each Tune button: blue (idle), orange (pending), green (success), red (error with tooltip).
-- **Settings popup** lets you configure the HRD host/port and test the connection without leaving the browser.
+- **Visual feedback** on each button: blue/purple (idle), orange (pending), green (success), red (error with tooltip).
+- **Settings popup** lets you configure the COM port/baud rate, your callsign and grid square, the HRD log port, and test the radio connection.
 
 ## Architecture
 
 ```
-SOTAwatch page          Chrome Extension           Native Host (Python)       HRD Rig Control
+SOTAwatch page          Chrome Extension           Native Host (Python)       Radio / Logbook
 +--------------+       +------------------+       +--------------------+     +--------------+
-| Spot rows    |  DOM  | content.js       |  msg  | bridge.py          | TCP | Port 7809    |
+| Spot rows    |  DOM  | content.js       |  msg  | bridge.py          | CAT | FT-DX10      |
 | + injected   |<----->| (inject buttons, |<----->| (auto-launched by  |---->| Set freq/mode|
-|   Tune btns  |       |  dedup spots)    |       |  Chrome on demand) |     | on FT-DX10   |
-+--------------+       | background.js    |       +--------------------+     +--------------+
-                       | (native messaging)|
-                       +------------------+
+|   Tune/Log   |       |  dedup spots)    |       |  Chrome on demand) |     +--------------+
+|   buttons    |       | background.js    |       |                    | UDP | HRD Logbook  |
++--------------+       | (native messaging)|       | adif_logger.py     |---->| Port 2333    |
+                       +------------------+       +--------------------+     +--------------+
 ```
 
 Chrome auto-launches the Python native host on demand when the extension sends a message. No manual process startup or open localhost ports required.
@@ -48,7 +50,9 @@ SOTA_Hunter/
 ├── native-host/
 │   ├── bridge.py                      # Native messaging host (stdin/stdout JSON bridge)
 │   ├── bridge.bat                     # Launcher for bridge.py
-│   ├── hrd_client.py                  # HRD Rig Control TCP protocol client
+│   ├── cat_client.py                  # Direct Yaesu FT-DX10 CAT serial client
+│   ├── adif_logger.py                 # ADIF record builder + UDP sender for HRD Logbook
+│   ├── hrd_client.py                  # HRD Rig Control TCP protocol client (legacy)
 │   ├── com.sotahunter.bridge.json     # Native messaging host manifest
 │   └── install.bat                    # One-time Windows registry setup
 ├── config.py                          # Version and configuration
@@ -64,8 +68,9 @@ SOTA_Hunter/
 
 - **Windows** (the native messaging host uses the Windows registry)
 - **Google Chrome**
-- **Python 3.6+** installed and available on your system `PATH`
-- **HRD Rig Control** (Ham Radio Deluxe) running and connected to your radio, with its TCP server listening on the default port 7809
+- **Python 3.6+** installed and available on your system `PATH` (with `pyserial` for CAT control)
+- **Yaesu FT-DX10** (or compatible radio) connected via USB/serial for CAT control
+- **HRD Logbook** (optional, for QSO logging) with UDP QSO Forwarding enabled on port 2333
 
 ## Setup
 
@@ -98,26 +103,42 @@ Chrome will assign the extension an ID (a long string of lowercase letters shown
    ```
    Update it if your installation is in a different location.
 
-### 4. Configure HRD connection (optional)
+### 4. Configure settings
 
-Click the SOTA Hunter icon in the Chrome toolbar to open the settings popup. The defaults (`127.0.0.1:7809`) work if HRD Rig Control is running locally with its default TCP port. Click **Test Connection** to verify.
+Click the SOTA Hunter icon in the Chrome toolbar to open the settings popup:
+
+- **COM Port / Baud Rate** — serial port for your radio (default: COM7 / 38400)
+- **My Callsign / Grid Square** — included in logged QSOs as STATION_CALLSIGN and MY_GRIDSQUARE
+- **HRD Log Port** — UDP port for HRD Logbook QSO Forwarding (default: 2333)
+
+Click **Test Connection** to verify the radio is responding on the configured port.
+
+### 5. Enable HRD Logbook UDP receive (for QSO logging)
+
+In HRD Logbook, go to **Tools > Configure > QSO Forwarding** and enable **"Receive QSO notifications using UDP from other applications (WSJT-X)"**. This allows SOTA Hunter to send logged QSOs directly into your logbook.
 
 ## Usage
 
-1. Make sure HRD Rig Control is running and connected to your radio
+1. Make sure your radio is connected and powered on
 2. Open https://sotawatch.sota.org.uk/en/
-3. Spots will show a blue **Tune** button next to each frequency
-4. Click a Tune button to set your radio to that frequency and mode
-5. Use the **Show unique activators only** checkbox above the spots table to toggle deduplication
+3. Each spot shows a blue **Tune** button and a purple **Log** button next to the frequency
+4. Click **Tune** to set your radio's VFO frequency and mode
+5. After working the station, click **Log** to send the QSO to HRD Logbook — the ADIF record includes the callsign, frequency, band, mode, SOTA reference, summit name/altitude, and your station details
+6. Use the **Show unique activators only** checkbox above the spots table to toggle deduplication
 
 ## Troubleshooting
 
 **Tune button turns red / shows an error:**
-- Check that HRD Rig Control is running and its TCP server is enabled on port 7809
+- Check that your radio is powered on and connected to the configured COM port
 - Click the SOTA Hunter toolbar icon and use **Test Connection** to diagnose
 - Check `native-host\bridge.log` for detailed error messages
 
-**No Tune buttons appear:**
+**Log button turns red / shows an error:**
+- Check that HRD Logbook is running with UDP QSO Forwarding enabled (Tools > Configure > QSO Forwarding)
+- Verify the HRD Log Port in settings matches the port HRD Logbook is listening on (default 2333)
+- Check `native-host\bridge.log` for the ADIF record that was sent
+
+**No Tune/Log buttons appear:**
 - Reload the SOTAwatch page
 - Check `chrome://extensions/` for any errors on the SOTA Hunter extension card
 - Open DevTools (F12) on the SOTAwatch page and look for `SOTA Hunter` messages in the console
