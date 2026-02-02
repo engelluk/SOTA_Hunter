@@ -2,8 +2,8 @@
 """Chrome Native Messaging host for SOTA Hunter.
 
 Reads JSON messages from stdin (4-byte LE length prefix + JSON),
-forwards tune requests to HRD Rig Control, and returns responses
-via stdout using the same framing.
+forwards tune requests to the radio via direct serial CAT, and
+returns responses via stdout using the same framing.
 """
 
 import json
@@ -27,7 +27,30 @@ if sys.platform == "win32":
     msvcrt.setmode(sys.stdin.fileno(), os.O_BINARY)
     msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
 
-from hrd_client import HRDClient
+from cat_client import CATClient
+
+# Keep a single serial connection open across requests
+_client = None
+
+
+def _get_client(request):
+    """Get or create a CATClient with the configured serial port."""
+    global _client
+    port = request.get("cat_port", "COM7")
+    baud = request.get("cat_baud", 38400)
+    try:
+        baud = int(baud)
+    except (ValueError, TypeError):
+        baud = 38400
+
+    if _client is not None:
+        if _client.port == port and _client.baud == baud:
+            return _client
+        # Settings changed, close old connection
+        _client.close()
+
+    _client = CATClient(port=port, baud=baud)
+    return _client
 
 
 def read_message():
@@ -55,36 +78,20 @@ def send_message(message):
 
 
 def handle_tune(request):
-    """Handle a tune request by forwarding to HRD."""
+    """Handle a tune request via direct CAT."""
     frequency = request.get("frequency")
     mode = request.get("mode", "SSB")
-    host = request.get("hrd_host", "127.0.0.1")
-    port = request.get("hrd_port", 7809)
 
     if not frequency:
         return {"success": False, "error": "No frequency specified"}
 
-    try:
-        port = int(port)
-    except (ValueError, TypeError):
-        port = 7809
-
-    client = HRDClient(host=host, port=port)
-    result = client.tune(frequency, mode)
-    return result
+    client = _get_client(request)
+    return client.tune(frequency, mode)
 
 
 def handle_test(request):
     """Handle a connection test request."""
-    host = request.get("hrd_host", "127.0.0.1")
-    port = request.get("hrd_port", 7809)
-
-    try:
-        port = int(port)
-    except (ValueError, TypeError):
-        port = 7809
-
-    client = HRDClient(host=host, port=port)
+    client = _get_client(request)
     return client.test_connection()
 
 
@@ -110,6 +117,9 @@ def main():
 
         send_message(response)
 
+    # Clean up serial port
+    if _client:
+        _client.close()
     logger.info("SOTA Hunter bridge exiting")
 
 

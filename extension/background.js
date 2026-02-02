@@ -94,12 +94,12 @@ function sendToNativeHost(message, tabId, originalRequestId) {
       originalRequestId,
     });
 
-    // Fetch HRD settings and include them in the message
-    chrome.storage.sync.get({ hrd_host: "127.0.0.1", hrd_port: 7809 }, (settings) => {
+    // Fetch CAT serial settings and include them in the message
+    chrome.storage.sync.get({ cat_port: "COM7", cat_baud: 38400 }, (settings) => {
       const fullMessage = {
         ...message,
-        hrd_host: settings.hrd_host,
-        hrd_port: settings.hrd_port,
+        cat_port: settings.cat_port,
+        cat_baud: settings.cat_baud,
       };
       console.log("Sending to native host:", fullMessage);
       port.postMessage(fullMessage);

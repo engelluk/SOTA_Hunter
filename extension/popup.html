@@ -155,12 +155,12 @@
 
   <div class="row">
     <div class="field">
-      <label for="hrd-host">HRD Host</label>
-      <input type="text" id="hrd-host" value="127.0.0.1" placeholder="127.0.0.1">
+      <label for="cat-port">COM Port</label>
+      <input type="text" id="cat-port" value="COM7" placeholder="COM7">
     </div>
     <div class="field">
-      <label for="hrd-port">Port</label>
-      <input type="number" id="hrd-port" value="7809" min="1" max="65535">
+      <label for="cat-baud">Baud Rate</label>
+      <input type="number" id="cat-baud" value="38400" min="4800" max="115200">
     </div>
   </div>
 
@@ -173,7 +173,7 @@
   <div id="status" class="status"></div>
 
   <div class="footer">
-    Controls Yaesu FT-DX10 via HRD Rig Control
+    Controls Yaesu FT-DX10 via direct serial CAT
   </div>
 
   <script src="popup.js"></script>
