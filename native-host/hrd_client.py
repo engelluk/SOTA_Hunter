@@ -113,35 +113,15 @@ class HRDClient:
     def set_mode(self, mode):
         """Set the operating mode.
 
-        Tries the dropdown index method first (Set Dropdown Mode {index}),
-        then verifies the mode actually changed. If dropdown fails, falls
-        back to 'Set Mode {name}'.
+        NOTE: Mode setting via HRD's TCP protocol is currently broken
+        for the FT-DX10.  Both 'Set Dropdown Mode {index}' and
+        'Set Mode {name}' force the radio to LSB regardless of the
+        requested mode.  Mode setting is therefore disabled to avoid
+        overriding the operator's manual mode selection.
         """
-        modes = self._get_mode_list()
-        if modes:
-            # Find the mode index (case-insensitive)
-            idx = None
-            for i, m in enumerate(modes):
-                if m.upper() == mode.upper():
-                    idx = i
-                    break
-            if idx is not None:
-                self._radio_command(f"Set Dropdown Mode {idx}")
-                time.sleep(0.3)
-                actual = self._radio_command("Get Mode")
-                if actual.upper() == mode.upper():
-                    logger.info("Set mode to %s via dropdown index %d", mode, idx)
-                    return actual
-                logger.warning(
-                    "Dropdown mode %d did not stick (wanted %s, got %s), "
-                    "trying Set Mode fallback",
-                    idx, mode, actual,
-                )
-
-        # Fallback: direct Set Mode command
-        response = self._radio_command(f"Set Mode {mode}")
-        logger.info("Set mode to %s via Set Mode: %s", mode, response)
-        return response
+        logger.info("Mode setting skipped (requested %s) - "
+                     "HRD TCP mode commands not functional for FT-DX10", mode)
+        return mode
 
     def get_frequency(self):
         """Read the current VFO frequency."""
@@ -173,27 +153,12 @@ class HRDClient:
         try:
             self.set_frequency(freq_hz)
             self.set_mode(hrd_mode)
-
-            # Verify what actually got set
-            actual_mode = self.get_mode()
-            mode_ok = actual_mode.upper() == hrd_mode.upper()
-
-            result = {
+            return {
                 "success": True,
                 "frequency": freq_mhz,
                 "mode": hrd_mode,
                 "freq_hz": freq_hz,
-                "actual_mode": actual_mode,
             }
-            if not mode_ok:
-                result["mode_warning"] = (
-                    f"Mode requested: {hrd_mode}, actual: {actual_mode}"
-                )
-                logger.warning(
-                    "Mode mismatch after tune: wanted %s, got %s",
-                    hrd_mode, actual_mode,
-                )
-            return result
         except (ConnectionError, OSError, socket.timeout) as e:
             return {"success": False, "error": str(e)}
 
