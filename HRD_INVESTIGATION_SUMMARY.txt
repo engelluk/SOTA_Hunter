@@ -1,0 +1,244 @@
+================================================================================
+HRD PROTOCOL INVESTIGATION - EXECUTIVE SUMMARY
+SOTA Hunter Project
+================================================================================
+
+INVESTIGATION SCOPE
+-------------------
+Total Activities: 174
+- Bash commands: 116 (75 Python test executions)
+- Web searches: 19
+- Web page fetches: 13
+- Python scripts created: 26
+
+Duration: February 1, 2026 (multi-session investigation)
+
+PROBLEM STATEMENT
+-----------------
+Need to control Yaesu FT-DX10 radio for SOTA operations:
+- Set frequency (for tuning to SOTA spots)
+- Set mode (USB/LSB/CW based on band)
+- Log QSOs to Ham Radio Deluxe Logbook
+
+PHASE 1: HRD TCP API INVESTIGATION
+-----------------------------------
+Protocol Details Discovered:
+- Port: 7809 (localhost)
+- Encoding: UTF-16LE
+- Message format: 4-byte little-endian length prefix + UTF-16LE text
+- Commands: "get context", "get frequency-hz", "set frequency-hz", "set dropdown mode"
+
+Initial Results:
+✅ Connection works
+✅ Frequency reading works
+✅ Frequency setting works
+❌ Mode setting BROKEN (commands accepted but no effect)
+
+PHASE 2: MODE SETTING INVESTIGATION (13 PROBE SCRIPTS)
+-------------------------------------------------------
+Systematic testing to isolate mode setting problem:
+
+probe_mode.py          - Basic dropdown commands → FAILED
+probe_mode2.py         - Curly-brace syntax {Mode} → FAILED
+probe_mode3.py         - Alternative command formats → FAILED
+probe_mode4.py         - Fresh context before each command → FAILED
+probe_mode5.py         - Test all indices 0-14 → FAILED
+probe_cat.py           - Raw CAT injection via HRD → NOT SUPPORTED
+probe_vfo.py           - VFO-specific commands → FAILED
+probe_mode_final.py    - Deep investigation, all variations → FAILED
+probe_mode_final2.py   - Context-free, sync commands → FAILED
+probe_other_dropdowns.py - Test if ANY dropdowns work → OTHER DROPDOWNS WORK
+probe_write_test.py    - Test other Set commands → MOST FAIL
+probe_hrd_gui.py       - GUI automation with pywinauto → TOO FRAGILE
+
+CONCLUSION: HRD TCP API mode setting is fundamentally broken
+- Not a syntax issue (other dropdowns work)
+- Not a timing issue (tried delays, fresh context)
+- Not an encoding issue (frequency setting works)
+- API accepts commands but doesn't execute them
+- This is a bug in HRD v6
+
+PHASE 3: ALTERNATIVE SOLUTION - DIRECT CAT CONTROL
+---------------------------------------------------
+Decision: Bypass HRD for rig control, use direct serial CAT
+
+COM Port Discovery:
+- Used probe_alternatives.py to enumerate ports
+- Found: COM7 (FT-DX10 serial interface)
+
+Yaesu CAT Protocol:
+- Baud: 9600
+- Format: 8N2 (8 data bits, no parity, 2 stop bits)
+- Commands: 5-byte ASCII terminated with semicolon
+- Examples: FA; (read freq), MD1; (set USB), FA00007040000; (set 7.040 MHz)
+
+CAT Implementation Scripts:
+test_cat.py (7 versions) - Progressive testing and refinement
+cat_client.py            - Production implementation
+
+RESULTS:
+✅ Direct CAT mode setting works perfectly
+✅ Direct CAT frequency setting works
+✅ All modes supported (LSB/USB/CW/FM/AM/RTTY/DATA/C4FM)
+✅ Fast and reliable
+✅ No dependency on HRD bugs
+
+PHASE 4: HRD LOGBOOK INTEGRATION (UDP ADIF)
+--------------------------------------------
+Separate investigation for QSO logging functionality
+
+Web Research Results:
+- HRD Logbook accepts UDP ADIF on port 2333
+- Same protocol used by WSJT-X, N1MM+
+- Well-documented standard format
+
+ADIF UDP Protocol:
+- Port: 2333 (localhost)
+- Format: ADIF records with field tags
+- SOTA-specific fields: SIG="SOTA", SIG_INFO="W7W/LC-001"
+
+Implementation:
+- Added to bridge.py
+- "Log QSO" button sends SOTA chase records
+- Automatic field population from SOTAwatch
+
+RESULTS:
+✅ QSO logging works perfectly
+✅ SOTA references properly encoded
+✅ Appears in HRD Logbook immediately
+
+FINAL ARCHITECTURE
+------------------
+
+┌─────────────────────────────────────────────────────────────┐
+│                     SOTA Hunter Extension                    │
+│                  (Chrome Browser Extension)                  │
+└────────────────────┬────────────────────────────────────────┘
+                     │ Chrome Native Messaging
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│                       bridge.py                              │
+│              (Native Messaging Host)                         │
+│                                                              │
+│  ┌─────────────────────┐      ┌────────────────────────┐   │
+│  │   CATClient         │      │   UDP ADIF Sender      │   │
+│  │   (cat_client.py)   │      │   (port 2333)          │   │
+│  └──────────┬──────────┘      └──────────┬─────────────┘   │
+└─────────────┼──────────────────────────────┼─────────────────┘
+              │                              │
+              │ Serial CAT                   │ UDP ADIF
+              │ 9600 8N2                     │
+              ▼                              ▼
+┌──────────────────────┐      ┌────────────────────────────┐
+│   Yaesu FT-DX10      │      │   HRD Logbook              │
+│   (via COM7)         │      │   (localhost:2333)         │
+│                      │      │                            │
+│  ✅ Set Frequency    │      │  ✅ Log QSOs               │
+│  ✅ Set Mode         │      │  ✅ SOTA References        │
+│  ✅ Read Status      │      │  ✅ Standard ADIF Format   │
+└──────────────────────┘      └────────────────────────────┘
+
+LESSONS LEARNED
+---------------
+1. HRD TCP API is unreliable for write operations
+   - Frequency setting works
+   - Mode setting broken
+   - Most other controls fail
+
+2. Direct hardware control is superior
+   - CAT protocol well-documented
+   - Reliable and fast
+   - No third-party software dependency
+
+3. Industry standards work better
+   - UDP ADIF is simple and reliable
+   - Widely supported across ham radio software
+   - Better than proprietary APIs
+
+4. Systematic testing is essential
+   - 13 probe scripts isolated the exact problem
+   - Documented what works and what doesn't
+   - Led to correct architectural decision
+
+5. Community resources are invaluable
+   - GitHub projects (MiniDeluxe, slice-master)
+   - Archived forum posts
+   - Reverse engineering blog posts
+   - WSJT-X source code
+
+KEY WEB RESOURCES CONSULTED
+----------------------------
+Forums & Documentation:
+- forums.hamradiodeluxe.com/node/34951 (API discussion)
+- forums.hamradiodeluxe.com/node/40968 (Binary protocol docs)
+- support.hamradiodeluxe.com (QSO forwarding)
+- manualzz.com (HRD server installation manual)
+
+GitHub Projects:
+- github.com/krisp/MiniDeluxe (C# HRD client)
+- github.com/K1DBO/slice-master-6000 (FlexRadio/HRD)
+
+Technical Resources:
+- sivantoledotech.wordpress.com (Reverse engineering HRD)
+- remotehams.com/forums (HRD protocol discussions)
+- community.flexradio.com (UDP ADIF examples)
+
+ADIF Specification Research:
+- WSJT-X source code and documentation
+- N1MM+ UDP broadcast format
+- ADIF SIG/SIG_INFO fields for SOTA
+
+DELIVERABLES
+------------
+Production Code:
+✅ cat_client.py       - Direct Yaesu CAT serial client (ACTIVE)
+✅ bridge.py           - Native messaging host with UDP ADIF (ACTIVE)
+❌ hrd_client.py       - HRD TCP client (DEPRECATED - broken mode setting)
+
+Investigation Scripts (ARCHIVED):
+- 13 probe_*.py files documenting systematic testing
+- 7 test_cat.py iterations showing CAT development
+- COM port enumeration utilities
+- GUI automation experiments
+
+Documentation:
+✅ HRD_INVESTIGATION_REPORT.md - Complete detailed report
+✅ HRD_INVESTIGATION_SUMMARY.txt - This executive summary
+✅ hrd_investigation_activities.json - Full activity log (174 entries)
+
+RECOMMENDATIONS
+---------------
+1. For future rig control projects:
+   - Prefer direct CAT/serial control over third-party APIs
+   - Only use HRD for features it does well (logging, not control)
+
+2. For HRD integration:
+   - Use UDP ADIF (port 2333) for logging - it works
+   - Avoid HRD TCP API (port 7809) for write operations - it's broken
+
+3. For protocol investigation:
+   - Create systematic probe scripts
+   - Test edge cases thoroughly
+   - Document negative results (what doesn't work)
+   - Check GitHub for community implementations
+
+CONCLUSION
+----------
+Through systematic investigation and 174+ documented activities, successfully:
+
+✅ Identified HRD TCP API limitations (mode setting broken)
+✅ Implemented reliable direct CAT serial control
+✅ Integrated HRD Logbook via standard UDP ADIF
+✅ Created production-ready hybrid solution
+✅ Documented entire investigation process
+
+The final architecture uses:
+- Direct Yaesu CAT for rig control (reliable, fast, no bugs)
+- UDP ADIF for HRD Logbook integration (industry standard, simple)
+
+This provides the best of both worlds: reliable rig control and standard
+logging integration.
+
+Status: COMPLETE AND OPERATIONAL
+
+================================================================================

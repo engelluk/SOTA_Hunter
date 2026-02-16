@@ -1,0 +1,8 @@
+[
+  {
+    "timestamp": "2026-02-01T11:11:55.002Z",
+    "line": 101,
+    "tool": "Bash",
+    "command": "ls -la \"C:\\Users\\X1\\Documents\\AI tests\\SOTA_Hunter\""
+  }
+]
