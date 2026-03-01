@@ -6,7 +6,6 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  margin-left: 6px;
   padding: 2px 8px;
   border: 1px solid #2196f3;
   border-radius: 3px;
@@ -68,7 +67,7 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  margin-left: 4px;
+  margin-left: 3px;
   padding: 2px 8px;
   border: 1px solid #7b1fa2;
   border-radius: 3px;
@@ -117,41 +116,12 @@
   border-color: #f44336;
 }
 
-/* ── Filter Bar ──────────────────────────────────────────────────── */
+/* ── Button Cell ─────────────────────────────────────────────────── */
 
-#sota-hunter-filter-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 12px;
-  margin-bottom: 8px;
-  background: #e3f2fd;
-  border: 1px solid #bbdefb;
-  border-radius: 4px;
-  font-size: 13px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-}
-
-.sota-hunter-filter-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  color: #1565c0;
-  user-select: none;
-}
-
-.sota-hunter-filter-label input[type="checkbox"] {
-  cursor: pointer;
-  accent-color: #2196f3;
-}
-
-.sota-hunter-badge {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #90a4ae;
+.sota-hunter-btn-cell {
+  white-space: nowrap;
+  vertical-align: middle;
+  padding: 2px 4px;
 }
 
 /* ── Duplicate Row Hiding ────────────────────────────────────────── */

@@ -51,13 +51,20 @@ class CATClient:
             time.sleep(0.1)
             logger.info("Opened %s at %d baud", self.port, self.baud)
 
-    def _send(self, cmd):
-        """Send a CAT command and return the response (if any)."""
+    def _set(self, cmd):
+        """Send a CAT set command. Set commands have no response on the FT-DX10."""
         self._ensure_open()
         self._ser.reset_input_buffer()
         self._ser.write(cmd.encode("ascii"))
         logger.debug("CAT> %s", cmd)
-        # Read until semicolon or timeout
+        time.sleep(0.05)  # Let the radio process before the next command
+
+    def _query(self, cmd):
+        """Send a CAT query command and return the response."""
+        self._ensure_open()
+        self._ser.reset_input_buffer()
+        self._ser.write(cmd.encode("ascii"))
+        logger.debug("CAT> %s", cmd)
         resp = self._ser.read_until(b";").decode("ascii", errors="replace")
         if resp:
             logger.debug("CAT< %s", resp)
@@ -74,9 +81,8 @@ class CATClient:
 
     def set_frequency(self, freq_hz):
         """Set VFO-A frequency in Hz."""
-        # FA command: FA followed by 9-digit frequency, then semicolon
         cmd = f"FA{int(freq_hz):09d};"
-        self._send(cmd)
+        self._set(cmd)
         logger.info("Set frequency to %d Hz", freq_hz)
 
     def set_mode(self, mode):
@@ -85,12 +91,12 @@ class CATClient:
         if cat_code is None:
             raise ValueError(f"Unknown mode: {mode}")
         cmd = f"MD0{cat_code};"
-        self._send(cmd)
+        self._set(cmd)
         logger.info("Set mode to %s (MD0%s)", mode, cat_code)
 
     def get_frequency(self):
         """Read VFO-A frequency in Hz as a string."""
-        resp = self._send("FA;")
+        resp = self._query("FA;")
         # Response: FA014285000;
         if resp.startswith("FA") and resp.endswith(";"):
             return str(int(resp[2:-1]))
@@ -98,7 +104,7 @@ class CATClient:
 
     def get_mode(self):
         """Read current operating mode as a string."""
-        resp = self._send("MD0;")
+        resp = self._query("MD0;")
         # Response: MD02;
         if resp.startswith("MD0") and resp.endswith(";"):
             code = resp[3:-1]
@@ -125,11 +131,13 @@ class CATClient:
         cat_mode = self._map_mode(mode, freq_hz)
 
         try:
-            # Set mode BEFORE frequency: the FT-DX10 may shift the VFO
-            # when changing mode (e.g. USB->LSB), so setting freq last
-            # ensures we land on the exact requested frequency.
+            # Set mode BEFORE frequency to minimise VFO drift on band changes.
+            # Then set frequency (which may trigger a band recall that overrides
+            # the mode), then set mode AGAIN to correct whatever the band recall
+            # may have restored.
             self.set_mode(cat_mode)
             self.set_frequency(freq_hz)
+            self.set_mode(cat_mode)  # Correct mode after band recall
 
             # Verify
             actual_freq = self.get_frequency()

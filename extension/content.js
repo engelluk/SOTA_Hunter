@@ -13,7 +13,6 @@
   const POLL_INTERVAL = 60000; // Re-check spots every 60s
   const PROCESS_DEBOUNCE = 500; // Debounce DOM mutations
 
-  let dedupEnabled = true;
   let spotsData = []; // Parsed from API
   let pendingCallbacks = new Map(); // requestId -> callback
   let requestCounter = 0;
@@ -103,6 +102,7 @@
     let frequency = null;
     let mode = null;
     let summitRef = null;
+    let modeCell = null;
 
     const allText = tr.textContent;
 
@@ -137,6 +137,7 @@
         /^(SSB|CW|FM|AM|DATA|FT8|FT4|JS8|PSK|C4FM|DMR|USB|LSB|CW-R)$/i.test(text)
       ) {
         mode = text.toUpperCase();
+        modeCell = cell;
         continue;
       }
 
@@ -187,6 +188,7 @@
       summitRef,
       element: tr,
       freqCell: freqCell || cells[0],
+      modeCell,
     };
   }
 
@@ -207,8 +209,8 @@
 
       const activatorKey = spot.callsign.toUpperCase();
 
-      // Deduplication
-      if (dedupEnabled && seenActivators.has(activatorKey)) {
+      // Deduplication: always show only the latest spot per activator
+      if (seenActivators.has(activatorKey)) {
         row.classList.add("sota-hunter-duplicate");
         row.style.display = "none";
         continue;
@@ -225,37 +227,81 @@
         spot.mode = latest.mode || spot.mode;
       }
 
-      // Inject tune button if not already present
-      if (!row.querySelector(".sota-hunter-tune-btn")) {
-        injectTuneButton(spot);
-      }
-
-      // Inject log button if not already present
-      if (!row.querySelector(".sota-hunter-log-btn")) {
-        injectLogButton(spot);
+      // Inject button cell if not already present; otherwise update its data
+      const existingCell = row.querySelector(".sota-hunter-btn-cell");
+      if (existingCell) {
+        updateButtonCell(existingCell, spot);
+      } else {
+        injectButtons(spot);
       }
     }
   }
 
   /**
-   * Inject a Tune button into the spot row.
+   * Inject a dedicated <td> with Tune and Log buttons after the mode column.
+   * Spot data is stored in the cell's dataset so click handlers always read
+   * the latest values without needing to recreate the buttons.
    */
-  function injectTuneButton(spot) {
-    const btn = document.createElement("button");
-    btn.className = "sota-hunter-tune-btn";
-    btn.title = `Tune to ${spot.frequency} MHz ${spot.mode}`;
-    btn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+  function injectButtons(spot) {
+    const td = document.createElement("td");
+    td.className = "sota-hunter-btn-cell";
+    td.dataset.frequency = spot.frequency;
+    td.dataset.mode = spot.mode;
+    td.dataset.callsign = spot.callsign;
+    td.dataset.summitRef = spot.summitRef || "";
+
+    const tuneBtn = document.createElement("button");
+    tuneBtn.className = "sota-hunter-tune-btn";
+    tuneBtn.title = `Tune to ${spot.frequency} MHz ${spot.mode}`;
+    tuneBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
     </svg> Tune`;
-
-    btn.addEventListener("click", (e) => {
+    tuneBtn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      tuneToSpot(spot, btn);
+      tuneToSpot(td.dataset, tuneBtn);
     });
 
-    // Insert the button into the frequency cell or the last cell
-    spot.freqCell.appendChild(btn);
+    const logBtn = document.createElement("button");
+    logBtn.className = "sota-hunter-log-btn";
+    logBtn.title = `Log QSO with ${spot.callsign}`;
+    logBtn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+      <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zm-3 4h4v2h-4v-2zm0 3h4v2h-4v-2zm-2-3H7v5h1v-5z"/>
+    </svg> Log`;
+    logBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      logSpot(td.dataset, logBtn);
+    });
+
+    td.appendChild(tuneBtn);
+    td.appendChild(logBtn);
+
+    // Insert immediately after the mode cell; fall back to end of row
+    if (spot.modeCell && spot.modeCell.nextSibling) {
+      spot.element.insertBefore(td, spot.modeCell.nextSibling);
+    } else {
+      spot.element.appendChild(td);
+    }
+  }
+
+  /**
+   * Update an existing button cell's dataset and button titles in place.
+   * Called instead of recreating buttons when spot data changes.
+   */
+  function updateButtonCell(td, spot) {
+    td.dataset.frequency = spot.frequency;
+    td.dataset.mode = spot.mode;
+    td.dataset.callsign = spot.callsign;
+    td.dataset.summitRef = spot.summitRef || "";
+    const tuneBtn = td.querySelector(".sota-hunter-tune-btn");
+    if (tuneBtn && !tuneBtn.classList.contains("sota-hunter-tune-pending")) {
+      tuneBtn.title = `Tune to ${spot.frequency} MHz ${spot.mode}`;
+    }
+    const logBtn = td.querySelector(".sota-hunter-log-btn");
+    if (logBtn && !logBtn.classList.contains("sota-hunter-log-pending")) {
+      logBtn.title = `Log QSO with ${spot.callsign}`;
+    }
   }
 
   /**
@@ -297,26 +343,6 @@
       frequency: spot.frequency,
       mode: spot.mode,
     });
-  }
-
-  /**
-   * Inject a Log button into the spot row (next to the Tune button).
-   */
-  function injectLogButton(spot) {
-    const btn = document.createElement("button");
-    btn.className = "sota-hunter-log-btn";
-    btn.title = `Log QSO with ${spot.callsign}`;
-    btn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-      <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zm-3 4h4v2h-4v-2zm0 3h4v2h-4v-2zm-2-3H7v5h1v-5z"/>
-    </svg> Log`;
-
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      logSpot(spot, btn);
-    });
-
-    spot.freqCell.appendChild(btn);
   }
 
   /**
@@ -394,44 +420,6 @@
     }
   });
 
-  // ── Filter Toggle UI ──────────────────────────────────────────────
-
-  function injectFilterBar() {
-    // Don't inject twice
-    if (document.getElementById("sota-hunter-filter-bar")) return;
-
-    // Find the spots container - look for the main content area
-    const container =
-      document.querySelector(".spots-table")?.parentElement ||
-      document.querySelector("table")?.parentElement ||
-      document.querySelector("main") ||
-      document.querySelector("#app > div");
-
-    if (!container) return;
-
-    const bar = document.createElement("div");
-    bar.id = "sota-hunter-filter-bar";
-    bar.innerHTML = `
-      <label class="sota-hunter-filter-label">
-        <input type="checkbox" id="sota-hunter-dedup-toggle" ${dedupEnabled ? "checked" : ""} />
-        Show unique activators only
-      </label>
-      <span class="sota-hunter-badge">SOTA Hunter</span>
-    `;
-
-    container.insertBefore(bar, container.firstChild);
-
-    document.getElementById("sota-hunter-dedup-toggle").addEventListener("change", (e) => {
-      dedupEnabled = e.target.checked;
-      // Re-show all rows first, then re-process
-      document.querySelectorAll(".sota-hunter-duplicate").forEach((row) => {
-        row.classList.remove("sota-hunter-duplicate");
-        row.style.display = "";
-      });
-      processSpots();
-    });
-  }
-
   // ── Initialization ─────────────────────────────────────────────────
 
   function debouncedProcess() {
@@ -444,13 +432,11 @@
   function init() {
     // Fetch API data first, then process the DOM
     fetchSpots().then(() => {
-      injectFilterBar();
       processSpots();
     });
 
     // Observe DOM mutations for SPA navigation and spot updates
     const observer = new MutationObserver((mutations) => {
-      // Check if any mutations affect the spots area
       let relevant = false;
       for (const mutation of mutations) {
         if (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0) {
@@ -459,7 +445,6 @@
         }
       }
       if (relevant) {
-        injectFilterBar();
         debouncedProcess();
       }
     });
@@ -470,13 +455,12 @@
     // Periodically refresh spot data from the API
     setInterval(async () => {
       await fetchSpots();
-      // Re-show all rows and reprocess to handle updated data
+      // Re-show hidden duplicate rows so dedup can be re-evaluated with fresh data
       document.querySelectorAll(".sota-hunter-duplicate").forEach((row) => {
         row.classList.remove("sota-hunter-duplicate");
         row.style.display = "";
       });
-      // Remove old buttons so they get refreshed data
-      document.querySelectorAll(".sota-hunter-tune-btn, .sota-hunter-log-btn").forEach((btn) => btn.remove());
+      // processSpots updates existing button cells in place — no removal needed
       processSpots();
     }, POLL_INTERVAL);
   }
