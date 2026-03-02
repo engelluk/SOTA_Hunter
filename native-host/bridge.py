@@ -130,7 +130,9 @@ def handle_log(request):
     time_on = now.strftime("%H%M")
 
     band = freq_to_band(freq)
-    rst = default_rst(mode)
+    fallback_rst = default_rst(mode)
+    rst_sent = request.get("rst_sent") or fallback_rst
+    rst_rcvd = request.get("rst_rcvd") or fallback_rst
 
     adif = build_adif_record(
         call=call,
@@ -139,8 +141,8 @@ def handle_log(request):
         freq=freq,
         band=band,
         mode=adif_mode,
-        rst_sent=rst,
-        rst_rcvd=rst,
+        rst_sent=rst_sent,
+        rst_rcvd=rst_rcvd,
         sota_ref=sota_ref,
         comment=comment,
         station_callsign=station_callsign,

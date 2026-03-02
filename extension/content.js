@@ -32,21 +32,6 @@
   }
 
   /**
-   * Build a lookup from activator callsign to their latest spot.
-   */
-  function getLatestSpotsByActivator() {
-    const latest = new Map();
-    // API returns newest first, so the first occurrence per callsign is the latest
-    for (const spot of spotsData) {
-      const key = spot.activatorCallsign?.toUpperCase();
-      if (key && !latest.has(key)) {
-        latest.set(key, spot);
-      }
-    }
-    return latest;
-  }
-
-  /**
    * Fetch summit details from the SOTA API and cache the result.
    * Returns {name, altitude, locator} or null on failure.
    */
@@ -199,11 +184,9 @@
     const rows = findSpotRows();
     if (rows.length === 0) return;
 
-    const latestByActivator = getLatestSpotsByActivator();
     const seenActivators = new Set();
 
     for (const row of rows) {
-      // Skip rows we've already fully processed (unless re-processing)
       const spot = parseSpotRow(row);
       if (!spot) continue;
 
@@ -219,13 +202,6 @@
       seenActivators.add(activatorKey);
       row.classList.remove("sota-hunter-duplicate");
       row.style.display = "";
-
-      // If we have API data, use the latest spot's frequency/mode
-      if (latestByActivator.has(activatorKey)) {
-        const latest = latestByActivator.get(activatorKey);
-        spot.frequency = latest.frequency || spot.frequency;
-        spot.mode = latest.mode || spot.mode;
-      }
 
       // Inject button cell if not already present; otherwise update its data
       const existingCell = row.querySelector(".sota-hunter-btn-cell");
@@ -271,7 +247,7 @@
     logBtn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      logSpot(td.dataset, logBtn);
+      showRstDialog(td.dataset, logBtn);
     });
 
     td.appendChild(tuneBtn);
@@ -345,11 +321,70 @@
     });
   }
 
+  function defaultRst(mode) {
+    const m = (mode || "").toUpperCase();
+    if (m === "CW" || m === "CW-R") return "599";
+    if (["FT8", "FT4", "JS8", "PSK", "DATA", "DATA-U"].includes(m)) return "+00";
+    return "59";
+  }
+
+  /**
+   * Show a small modal dialog to enter RST sent/received before logging.
+   */
+  function showRstDialog(dataset, logBtn) {
+    const rst = defaultRst(dataset.mode);
+
+    const dialog = document.createElement("dialog");
+    dialog.className = "sota-hunter-rst-dialog";
+    dialog.innerHTML = `
+      <form method="dialog" class="sota-hunter-rst-form">
+        <div class="sota-hunter-rst-header">
+          <span class="sota-hunter-rst-call">${dataset.callsign}</span>
+          <span class="sota-hunter-rst-freq">${dataset.frequency} MHz ${dataset.mode}</span>
+        </div>
+        <div class="sota-hunter-rst-fields">
+          <label>RST Sent
+            <input type="text" name="rst_sent" value="${rst}" maxlength="3" autocomplete="off">
+          </label>
+          <label>RST Rcvd
+            <input type="text" name="rst_rcvd" value="${rst}" maxlength="3" autocomplete="off">
+          </label>
+        </div>
+        <div class="sota-hunter-rst-actions">
+          <button type="submit" class="sota-hunter-rst-submit">Log</button>
+          <button type="button" class="sota-hunter-rst-cancel">Cancel</button>
+        </div>
+      </form>
+    `;
+
+    document.body.appendChild(dialog);
+    dialog.showModal();
+
+    // Select the RST Sent field ready to type
+    const rstSentInput = dialog.querySelector("input[name=rst_sent]");
+    rstSentInput.focus();
+    rstSentInput.select();
+
+    // Tab from RST Sent → RST Rcvd, Enter in RST Rcvd → submit
+    dialog.querySelector("input[name=rst_rcvd]").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); dialog.querySelector(".sota-hunter-rst-submit").click(); }
+    });
+
+    dialog.querySelector(".sota-hunter-rst-cancel").addEventListener("click", () => dialog.close());
+    dialog.addEventListener("close", () => dialog.remove());
+
+    dialog.querySelector("form").addEventListener("submit", () => {
+      const rstSent = dialog.querySelector("input[name=rst_sent]").value.trim() || rst;
+      const rstRcvd = dialog.querySelector("input[name=rst_rcvd]").value.trim() || rst;
+      logSpot(dataset, logBtn, rstSent, rstRcvd);
+    });
+  }
+
   /**
    * Send a log request for the given spot. Fetches summit details first,
    * then sends a message to the background script.
    */
-  async function logSpot(spot, btn) {
+  async function logSpot(spot, btn, rstSent, rstRcvd) {
     const requestId = ++requestCounter;
     btn.classList.remove("sota-hunter-log-success", "sota-hunter-log-error");
     btn.classList.add("sota-hunter-log-pending");
@@ -405,6 +440,8 @@
       mode: spot.mode,
       sota_ref: summitRef,
       comment,
+      rst_sent: rstSent,
+      rst_rcvd: rstRcvd,
     });
   }
 

@@ -142,6 +142,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             mode: message.mode,
             sota_ref: message.sota_ref,
             comment: message.comment,
+            rst_sent: message.rst_sent,
+            rst_rcvd: message.rst_rcvd,
             my_callsign: settings.my_callsign,
             my_gridsquare: settings.my_gridsquare,
             log_port: settings.log_port,
