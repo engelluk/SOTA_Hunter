@@ -1,18 +1,18 @@
-# SOTA Hunter - Project Information
+# SOTA Hunter — Project Information
 
 **Current Version:** 1.0.0
 **Status:** Active Development
-**Last Updated:** February 2026
+**Last Updated:** March 2026
 
 ---
 
 ## IMPORTANT FOR AI ASSISTANTS
 
-**This project has strict development standards. You MUST read these files before making changes:**
+**This project has strict development standards. Read these files before making changes:**
 
-1. **[AI_INSTRUCTIONS.md](AI_INSTRUCTIONS.md)** - START HERE (quick guide)
-2. **[config.py](config.py)** - Check current VERSION
-3. **[RELEASE_NOTES.md](RELEASE_NOTES.md)** - Review recent changes (if exists)
+1. **[CLAUDE.md](CLAUDE.md)** - Key files, critical technical knowledge, conventions
+2. **[AI_INSTRUCTIONS.md](AI_INSTRUCTIONS.md)** - Quick-start workflow and checklist
+3. **[config.py](config.py)** - Check current VERSION
 
 **DO NOT make changes without following the documented workflow.**
 
@@ -20,48 +20,34 @@
 
 ## Project Overview
 
-SOTA Hunter is a Chrome extension + native messaging bridge that adds "Tune" buttons to SOTAwatch spots, deduplicates activators to show only the latest frequency, and controls the Yaesu FT-DX10 (or any HRD-supported radio) via HRD Rig Control's TCP interface.
+SOTA Hunter is a Chrome extension + Python native messaging host that adds **Tune** and **Log** buttons to every spot row on [SOTAwatch](https://sotawatch.sota.org.uk/).
+
+- **Tune** (blue) — sets the Yaesu FT-DX10's VFO frequency and mode via direct serial CAT on COM7
+- **Log** (purple) — sends a complete SOTA chase QSO to HRD Logbook via UDP ADIF (port 2333)
+
+Chrome auto-launches the Python native host on demand — no manual process startup required.
 
 **Key Features:**
-- Inline Tune buttons on SOTAwatch spot rows
-- Activator deduplication (latest spot per callsign)
-- Automatic SSB sideband selection based on frequency
-- Mode mapping (SOTAwatch modes to HRD modes)
-- Visual feedback on tune success/failure
-- Settings popup for HRD host/port configuration
+- Inline Tune and Log buttons on every SOTAwatch spot row
+- Activator deduplication — always on, shows only the most recent spot per callsign
+- RST dialog before logging — pre-fills 59/599/+00 based on mode, user confirms before sending
+- Summit enrichment — fetches name and altitude from the SOTA API, included in the ADIF COMMENT field; results cached to avoid repeated lookups
+- Automatic SSB sideband selection (LSB ≤ 7.3 MHz, USB above); digital modes → DATA-U
+- Mode mapping: SOTAwatch labels → correct Yaesu CAT mode codes
+- Visual feedback: blue/purple (idle) → orange (pending) → green (success) / red (error)
+- Settings popup: COM port, baud rate, callsign, grid square, HRD log port, Test Connection
 
 ---
 
-## Development Workflow (Summary)
+## Architecture
 
-### Every Change Must Include:
+```
+SOTAwatch DOM  →  content.js  →  background.js  →  bridge.py  →  cat_client.py  (serial CAT → FT-DX10)
+                                                                →  adif_logger.py (UDP ADIF → HRD Logbook)
+```
 
-1. **Version Update** - Update VERSION in config.py AND extension/manifest.json
-2. **Release Notes** - Add entry to RELEASE_NOTES.md (if used)
-3. **Testing** - Run all tests (Python syntax + JSON validation)
-4. **Git Commit** - Follow commit message template
-5. **Documentation** - Update README.md if needed
-
-### Version Increment Rules:
-
-- **MAJOR (X.0.0)** - Breaking changes, major features, new paradigms
-- **MINOR (0.X.0)** - New features, backward-compatible additions
-- **PATCH (0.0.X)** - Bug fixes, minor improvements
-
-**When uncertain, ask the user which version increment to use.**
-
----
-
-## Documentation Structure
-
-### For AI Assistants & Developers
-- **AI_INSTRUCTIONS.md** - Quick start, workflow, checklist
-- **CONTRIBUTING.md** - Detailed development workflow
-- **PROJECT.md** - This file
-
-### For Users
-- **README.md** - User guide, setup, and troubleshooting
-- **RELEASE_NOTES.md** - Version history (if used)
+- `extension/` — Chrome extension (Manifest V3): content script, service worker, popup
+- `native-host/` — Python bridge: native messaging stdin/stdout (4-byte LE length prefix + JSON)
 
 ---
 
@@ -69,78 +55,85 @@ SOTA Hunter is a Chrome extension + native messaging bridge that adds "Tune" but
 
 ```
 SOTA_Hunter/
-├── config.py                              Version and configuration
-├── .claude-instructions                   AI assistant discovery file
-├── AI_INSTRUCTIONS.md                     AI assistant guide
-├── CONTRIBUTING.md                        Development workflow
+├── config.py                              VERSION constant (must match manifest.json)
+├── CLAUDE.md                              AI assistant quick reference
+├── AI_INSTRUCTIONS.md                     AI assistant workflow guide
+├── CONTRIBUTING.md                        Development workflow and standards
 ├── PROJECT.md                             This file
 ├── README.md                              User documentation
-├── .gitignore                             Git ignore patterns
+├── .claude-instructions                   AI assistant discovery file
+├── .gitignore
 │
 ├── extension/                             Chrome Extension (Manifest V3)
 │   ├── manifest.json                      Extension manifest
-│   ├── background.js                      Service worker
-│   ├── content.js                         Content script (DOM injection, dedup)
-│   ├── content.css                        Injected styles
+│   ├── background.js                      Service worker — native messaging hub
+│   ├── content.js                         Content script — DOM injection, dedup, buttons
+│   ├── content.css                        Styles for injected UI elements
 │   ├── popup.html                         Settings popup
 │   ├── popup.js                           Popup logic
 │   └── icons/                             Extension icons (16/48/128 px)
 │
 └── native-host/                           Python Native Messaging Host
-    ├── bridge.py                          stdin/stdout JSON bridge
+    ├── bridge.py                          stdin/stdout JSON bridge (entry point)
     ├── bridge.bat                         Launcher for bridge.py
-    ├── hrd_client.py                      HRD TCP protocol client
-    ├── com.sotahunter.bridge.json         Native messaging manifest
-    └── install.bat                        Windows registry setup
+    ├── cat_client.py                      Direct Yaesu FT-DX10 CAT serial client
+    ├── adif_logger.py                     ADIF record builder + UDP sender
+    ├── hrd_client.py                      Legacy HRD TCP client (kept as reference)
+    ├── test_cat.py                        30-case CAT client test suite
+    ├── com.sotahunter.bridge.json.template  Native host manifest template
+    └── install.bat                        One-time Windows registry setup
 ```
+
+---
+
+## Development Workflow
+
+### Every Change Must Include:
+
+1. **Version Update** — update `VERSION` in `config.py` AND `"version"` in `extension/manifest.json` (must match)
+2. **Testing** — run all tests (see below)
+3. **Git Commit** — imperative mood, explain *why* not *what*; body for multi-file changes
+4. **Documentation** — update README.md if user-visible behaviour changes
+
+### Version Increment Rules:
+
+- **MAJOR (X.0.0)** — breaking changes, major new features
+- **MINOR (0.X.0)** — new features, backward-compatible additions
+- **PATCH (0.0.X)** — bug fixes, minor improvements
 
 ---
 
 ## Required Tests Before Commit
 
 ```bash
-# 1. Python syntax check
+# Python syntax
 python -m py_compile native-host/bridge.py
-python -m py_compile native-host/hrd_client.py
+python -m py_compile native-host/cat_client.py
+python -m py_compile native-host/adif_logger.py
 python -m py_compile config.py
 
-# 2. Version import test
+# CAT client test suite (30 cases)
+python native-host/test_cat.py
+
+# Validate JSON manifests
+python -c "import json; json.load(open('extension/manifest.json')); print('OK')"
+python -c "import json; json.load(open('native-host/com.sotahunter.bridge.json.template')); print('OK')"
+
+# Version consistency check
 python -c "from config import VERSION; print('Version:', VERSION)"
-
-# 3. Validate JSON manifests
-python -c "import json; json.load(open('extension/manifest.json')); print('manifest.json: OK')"
-python -c "import json; json.load(open('native-host/com.sotahunter.bridge.json')); print('native manifest: OK')"
-
-# 4. Manual browser test (when UI changes are made)
-# Reload extension, open SOTAwatch, verify Tune buttons
 ```
 
 ---
 
-## Git Commit Format
+## Commit Message Format
 
 ```
-Release vX.Y.Z: Brief description
+Short imperative summary explaining why (not what)
 
-Detailed description.
+Longer body for multi-file changes — describe the problem being solved
+and why this approach was chosen.
 
-New Features:
-- Feature 1
-
-Technical Improvements:
-- Improvement 1
-
-Bug Fixes:
-- Fix 1
-
-Documentation:
-- Doc update 1
-
-File Changes:
-- Modified: file
-- Added: file
-
-Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 ```
 
 ---
@@ -149,36 +142,15 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
 
 Before committing, verify:
 
-- [ ] VERSION updated in config.py
-- [ ] VERSION updated in extension/manifest.json (must match)
-- [ ] RELEASE_NOTES.md has new version section (if used)
-- [ ] README.md version number updated (if applicable)
+- [ ] `VERSION` updated in `config.py`
+- [ ] `"version"` updated in `extension/manifest.json` (must match config.py)
 - [ ] All Python syntax checks passed
+- [ ] `test_cat.py` passes (if CAT client changed)
 - [ ] JSON manifests are valid
-- [ ] No venv/, __pycache__, or bridge.log in staged files
-- [ ] Commit message follows template
-- [ ] Co-Authored-By line included
-
----
-
-## Quick Commands
-
-```bash
-# Python syntax check
-python -m py_compile native-host/bridge.py native-host/hrd_client.py config.py
-
-# Version check
-python -c "from config import VERSION; print(VERSION)"
-
-# Git status
-git status
-
-# View recent commits
-git log --oneline -5
-```
+- [ ] `README.md` updated if user-visible behaviour changed
+- [ ] No `__pycache__/`, `bridge.log`, or `com.sotahunter.bridge.json` in staged files
+- [ ] Commit message is imperative, explains *why*, includes Co-Authored-By line
 
 ---
 
 **Remember:** Quality over speed. Follow the workflow completely.
-
-**Last Updated:** February 2026
