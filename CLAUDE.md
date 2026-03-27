@@ -43,7 +43,7 @@ SOTAwatch DOM  →  content.js  →  background.js  →  bridge.py  →  cat_cli
 ## Critical Technical Knowledge
 
 ### Do NOT attempt HRD TCP mode setting
-HRD v6 TCP protocol (port 7809) has a broken rig definition for the FT-DX10. `Set Frequency-Hz` works but ALL other write commands (`Set Dropdown`, `Set Mode`, `Set Button-select`, sliders) are silently ignored. This was tested exhaustively with 34 different approaches. See `HRD_PROTOCOL_NOTES.md` for the full investigation.
+HRD v6 TCP protocol (port 7809) has a broken rig definition for the FT-DX10. `Set Frequency-Hz` works but ALL other write commands (`Set Dropdown`, `Set Mode`, `Set Button-select`, sliders) are silently ignored. This was tested exhaustively with 34 different approaches — mode setting via HRD TCP is a dead end.
 
 ### CAT command ordering matters
 Always **set mode BEFORE frequency** to prevent VFO drift on band changes. The FT-DX10 can shift frequency when switching bands if mode is set after.
@@ -99,13 +99,6 @@ python native-host/test_cat.py
 
 # JSON manifests valid
 python -c "import json; json.load(open('extension/manifest.json')); print('OK')"
-python -c "import json; json.load(open('native-host/com.sotahunter.bridge.json')); print('OK')"
+python -c "import json; json.load(open('native-host/com.sotahunter.bridge.json.template')); print('OK')"
 ```
 
-## Investigation Documentation
-
-These files document the HRD protocol research — do not delete them:
-- `HRD_PROTOCOL_NOTES.md` — technical protocol spec, all 34 failed approaches
-- `HRD_INVESTIGATION_FULL_HISTORY.md` — chronological narrative
-- `HRD_INVESTIGATION_REPORT.md` — detailed report with all 26 scripts
-- `HRD_INVESTIGATION_SCRIPTS_REFERENCE.md` — script-by-script reference

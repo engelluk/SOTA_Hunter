@@ -53,7 +53,7 @@ SOTA_Hunter/
 │   ├── cat_client.py                  # Direct Yaesu FT-DX10 CAT serial client
 │   ├── adif_logger.py                 # ADIF record builder + UDP sender for HRD Logbook
 │   ├── hrd_client.py                  # HRD Rig Control TCP protocol client (legacy)
-│   ├── com.sotahunter.bridge.json     # Native messaging host manifest
+│   ├── com.sotahunter.bridge.json.template  # Native host manifest template (copy → .json, fill in)
 │   └── install.bat                    # One-time Windows registry setup
 ├── config.py                          # Version and configuration
 ├── AI_INSTRUCTIONS.md                 # AI assistant quick-start guide
@@ -87,21 +87,25 @@ Double-click `native-host\install.bat`. This writes a registry key under `HKCU\S
 
 Chrome will assign the extension an ID (a long string of lowercase letters shown on the extension card).
 
-### 3. Link the extension ID to the native host
+### 3. Create and configure the native host manifest
 
-1. Copy the extension ID from `chrome://extensions/`
+The manifest file is not included in the repo because it contains a machine-specific path and your personal extension ID.
+
+1. Copy the template:
+   ```
+   native-host\com.sotahunter.bridge.json.template  →  native-host\com.sotahunter.bridge.json
+   ```
 2. Open `native-host\com.sotahunter.bridge.json` in a text editor
-3. Replace `EXTENSION_ID_HERE` with your actual extension ID:
+3. Set `"path"` to the **absolute path** of `bridge.bat` on your system, e.g.:
+   ```json
+   "path": "C:\\Users\\YourName\\SOTA_Hunter\\native-host\\bridge.bat"
+   ```
+4. Copy the extension ID from `chrome://extensions/` and replace `YOUR_EXTENSION_ID`:
    ```json
    "allowed_origins": [
      "chrome-extension://abcdefghijklmnopqrstuvwxyz123456/"
    ]
    ```
-4. Verify that the `"path"` value points to the correct absolute path of `bridge.bat` on your system. The default is:
-   ```
-   C:\Users\X1\Documents\AI tests\SOTA_Hunter\native-host\bridge.bat
-   ```
-   Update it if your installation is in a different location.
 
 ### 4. Configure settings
 
@@ -145,8 +149,9 @@ In HRD Logbook, go to **Tools > Configure > QSO Forwarding** and enable **"Recei
 
 **"Cannot connect to native host" error:**
 - Verify you ran `install.bat`
+- Verify `native-host\com.sotahunter.bridge.json` exists (copy from `.template` if not)
 - Verify the extension ID in `com.sotahunter.bridge.json` matches your installed extension
-- Verify the `"path"` in the manifest points to `bridge.bat` and that Python is on your system `PATH`
+- Verify the `"path"` in `com.sotahunter.bridge.json` points to `bridge.bat` and that Python is on your system `PATH`
 - Try restarting Chrome after making changes to the native host manifest or registry
 
 **Deduplication not working as expected:**

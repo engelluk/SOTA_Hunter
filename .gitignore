@@ -53,3 +53,13 @@ native-host/bridge.log
 
 # Project Set-up Instructions (templates, not part of the app)
 Project Set-up Instructions/
+
+# Native messaging host manifest (user-specific — copy from .template and fill in)
+native-host/com.sotahunter.bridge.json
+
+# HRD investigation files (abandoned approach, personal reference only)
+HRD_*
+hrd_investigation_activities*.json
+
+# Claude Code local settings
+.claude/

@@ -1,9 +1,0 @@
-{
-  "name": "com.sotahunter.bridge",
-  "description": "SOTA Hunter - HRD Rig Control bridge for Chrome",
-  "path": "C:\\Users\\X1\\Documents\\AI tests\\SOTA_Hunter\\native-host\\bridge.bat",
-  "type": "stdio",
-  "allowed_origins": [
-    "chrome-extension://hapodonmoeoomeekjeackafbpbcgkkgb/"
-  ]
-}
