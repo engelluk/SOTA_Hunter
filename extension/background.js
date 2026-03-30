@@ -166,3 +166,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   return false;
 });
+
+/**
+ * Release the native host connection (and thereby the serial COM port) when
+ * no SOTAwatch tabs remain open. The native host process receives EOF on
+ * stdin, exits cleanly, and closes the serial port on the way out.
+ */
+async function releasePortIfUnused() {
+  if (!nativePort) return;
+  if (pendingRequests.size > 0) return; // don't interrupt an in-flight request
+  const tabs = await chrome.tabs.query({ url: "*://sotawatch.sota.org.uk/*" });
+  if (tabs.length === 0) {
+    nativePort.disconnect(); // triggers onDisconnect → nativePort = null
+  }
+}
+
+// Free the COM port when the last SOTAwatch tab is closed
+chrome.tabs.onRemoved.addListener(() => releasePortIfUnused());
+
+// Free the COM port when the user navigates away from SOTAwatch in all open tabs
+chrome.tabs.onUpdated.addListener((_tabId, changeInfo) => {
+  if (changeInfo.url) releasePortIfUnused();
+});

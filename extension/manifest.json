@@ -5,7 +5,8 @@
   "description": "Adds Tune and Log buttons to SOTAwatch spots. Tunes your radio via direct CAT and logs SOTA chase QSOs to HRD Logbook via UDP ADIF.",
   "permissions": [
     "nativeMessaging",
-    "storage"
+    "storage",
+    "tabs"
   ],
   "host_permissions": [
     "https://api2.sota.org.uk/*"
