@@ -45,17 +45,20 @@
     }
 
     input[type="text"],
-    input[type="number"] {
+    input[type="number"],
+    select {
       width: 100%;
       padding: 6px 8px;
       border: 1px solid #ccc;
       border-radius: 4px;
       font-size: 13px;
       outline: none;
+      background: #fff;
       transition: border-color 0.2s;
     }
 
-    input:focus {
+    input:focus,
+    select:focus {
       border-color: #2196f3;
     }
 
@@ -165,6 +168,21 @@
 
   <div class="section-label">Radio Control</div>
 
+  <div class="field">
+    <label for="cat-model">Radio Model</label>
+    <select id="cat-model">
+      <option value="FT-DX10">Yaesu FT-DX10 (38400)</option>
+      <option value="FTX-1">Yaesu FTX-1 (38400)</option>
+      <option value="FT-710">Yaesu FT-710 (38400)</option>
+      <option value="FTDX101MP">Yaesu FTDX101MP/D (38400)</option>
+      <option value="FT-991A">Yaesu FT-991A (4800)</option>
+      <option value="FT-891">Yaesu FT-891 (9600)</option>
+      <option value="FTDX3000">Yaesu FTDX3000 (4800)</option>
+      <option value="FTDX1200">Yaesu FTDX1200 (4800)</option>
+      <option value="Custom">Custom / Other</option>
+    </select>
+  </div>
+
   <div class="row">
     <div class="field">
       <label for="cat-port">COM Port</label>
@@ -203,7 +221,7 @@
   <div id="status" class="status"></div>
 
   <div class="footer">
-    Controls Yaesu FT-DX10 via direct serial CAT
+    Controls Yaesu radios via direct serial CAT
   </div>
 
   <script src="popup.js"></script>
