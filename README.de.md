@@ -17,7 +17,7 @@ SOTA Hunter ist eine Chrome-Erweiterung, die **Tune**- und **Log**-Schaltfläche
 ## Was beim Klicken passiert
 
 ### Tune (blauer Button)
-Stellt Frequenz und Betriebsart deines **Yaesu FT-DX10** mit einem Klick per direktem seriellen CAT ein — keine Zwischensoftware, keine CAT-zu-TCP-Brücken.
+Stellt Frequenz und Betriebsart deines **Yaesu-Radios** mit einem Klick per direktem seriellen CAT ein — keine Zwischensoftware, keine CAT-zu-TCP-Brücken.
 
 Das richtige Seitenband wird automatisch gewählt:
 - SSB → LSB unterhalb 7,3 MHz, USB darüber
@@ -37,13 +37,32 @@ Der geloggte Datensatz enthält Rufzeichen, Frequenz, Band, Betriebsart, **SOTA_
 
 | Funktion | Details |
 |---|---|
-| Direktes CAT-Abstimmen | Serieller Port (Standard COM7, 38400 Baud) — keine Zwischensoftware |
+| Direktes CAT-Abstimmen | 8 Yaesu-Modelle unterstützt — Baudrate wird automatisch gesetzt |
 | HRD Logbook-Integration | UDP ADIF auf Port 2333 — wie WSJT-X/JTDX |
 | Aktivierer-Deduplizierung | Zeigt nur den neuesten Spot pro Aktivierer — weniger Unübersichtlichkeit |
 | Gipfelanreicherung | Ruft Name & Höhe von der SOTA-API ab, wird gecacht |
 | RST-Dialog | Vorausgefüllt 59/599/+00 je nach Betriebsart, vor dem Senden bearbeitbar |
 | Visuelle Rückmeldung | Orange → ausstehend, Grün → Erfolg, Rot → Fehler mit Tooltip |
-| Einstellungs-Popup | COM-Port, Rufzeichen, Locator, Log-Port und Verbindungstest konfigurieren |
+| Einstellungs-Popup | Radio-Dropdown, COM-Port, Rufzeichen, Locator, Log-Port und Verbindungstest |
+
+---
+
+## Unterstützte Radios
+
+Aktuell werden alle Yaesu-Radios mit dem Standard-ASCII-CAT-Protokoll unterstützt. Modell im Einstellungs-Popup auswählen — die richtige Baudrate wird automatisch eingetragen.
+
+| Radio | Standard-Baudrate | Anschluss |
+|---|---|---|
+| FT-DX10 | 38400 | USB (Silicon Labs CP2105) |
+| FTX-1 | 38400 | USB (Silicon Labs CP2105) |
+| FT-710 | 38400 | USB (Silicon Labs CP2105) |
+| FTDX101MP/D | 38400 | USB + RS-232C |
+| FT-991A | 4800 | USB (Silicon Labs CP210x) |
+| FT-891 | 9600 | USB (Silicon Labs CP210x) |
+| FTDX3000 | 4800 | RS-232C (USB-Adapter erforderlich) |
+| FTDX1200 | 4800 | RS-232C + USB |
+
+**Custom / Other** verwenden für nicht aufgelistete Yaesu-Radios — Baudrate dann manuell eintragen.
 
 ---
 
@@ -51,7 +70,7 @@ Der geloggte Datensatz enthält Rufzeichen, Frequenz, Band, Betriebsart, **SOTA_
 
 - **Windows** + **Google Chrome**
 - **Python 3.6+** mit `pyserial` im System-`PATH`
-- **Yaesu FT-DX10** an einem seriellen/USB-Port (getestet auf COM7 via Silicon Labs CP2105)
+- **Yaesu-Radio** (siehe Unterstützte Radios) via USB oder RS-232C angeschlossen
 - **HRD Logbook** (optional) mit aktivierter UDP-QSO-Weiterleitung auf Port 2333
 
 ---
@@ -78,8 +97,17 @@ Die `.json`-Datei öffnen und einstellen:
 "allowed_origins": ["chrome-extension://DEINE_ERWEITERUNGS_ID/"]
 ```
 
-### 4 — Rufzeichen und Locator einstellen
-SOTA Hunter-Toolbar-Symbol klicken → Rufzeichen, Locator und COM-Port eintragen → **Speichern**.
+### 4 — Einstellungen konfigurieren
+SOTA Hunter-Toolbar-Symbol klicken, um das Einstellungs-Popup zu öffnen:
+
+![Erweiterungseinstellungen](screenshots/extension%20settings.png)
+
+- **Radio Model** — eigenes Radio auswählen; Baudrate wird automatisch eingetragen
+- **COM Port** — serieller Port des Radios (im Geräte-Manager nachschauen)
+- **My Callsign / Grid Square** — werden in jeden geloggten QSO-Datensatz aufgenommen
+- **HRD Log Port** — UDP-Port für HRD Logbook (Standard: 2333)
+
+**Test Connection** klicken, um die Verbindung zum Radio zu prüfen.
 
 ### 5 — HRD QSO-Weiterleitung aktivieren (für Log)
 HRD Logbook → **Tools → Konfigurieren → QSO-Weiterleitung** → *"QSO-Benachrichtigungen per UDP von anderen Anwendungen empfangen (WSJT-X)"* aktivieren.
@@ -100,7 +128,7 @@ HRD Logbook → **Tools → Konfigurieren → QSO-Weiterleitung** → *"QSO-Bena
 ## Architektur
 
 ```
-SOTAwatch DOM → content.js → background.js → bridge.py → cat_client.py  → FT-DX10 (CAT)
+SOTAwatch DOM → content.js → background.js → bridge.py → cat_client.py  → Yaesu-Radio (CAT)
                                                         → adif_logger.py → HRD Logbook (UDP)
 ```
 

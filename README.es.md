@@ -17,7 +17,7 @@ SOTA Hunter es una extensión de Chrome que añade botones **Tune** y **Log** di
 ## Qué ocurre al hacer clic
 
 ### Tune (botón azul)
-Ajusta la frecuencia VFO y el modo de tu **Yaesu FT-DX10** con un clic mediante CAT serie directo — sin software intermedio, sin puentes CAT-a-TCP.
+Ajusta la frecuencia VFO y el modo de tu **radio Yaesu** con un clic mediante CAT serie directo — sin software intermedio, sin puentes CAT-a-TCP.
 
 La banda lateral correcta se elige automáticamente:
 - SSB → LSB por debajo de 7,3 MHz, USB por encima
@@ -37,13 +37,32 @@ El registro incluye indicativo, frecuencia, banda, modo, **SOTA_REF**, nombre y 
 
 | Función | Detalle |
 |---|---|
-| Sintonización CAT directa | Puerto serie (COM7 por defecto, 38400 baudios) — sin software intermedio |
+| Sintonización CAT directa | 8 modelos Yaesu soportados — baudios configurados automáticamente por modelo |
 | Integración con HRD Logbook | UDP ADIF en el puerto 2333 — igual que WSJT-X/JTDX |
 | Deduplicación de activadores | Muestra solo el spot más reciente por activador — reduce el desorden |
 | Enriquecimiento de cimas | Obtiene nombre y altitud de la API SOTA, almacenado en caché |
 | Diálogo RST | Prerelleno 59/599/+00 según el modo, editable antes de enviar |
 | Retroalimentación visual | Naranja → pendiente, verde → éxito, rojo → error con tooltip |
-| Popup de ajustes | Configurar puerto COM, indicativo, locator, puerto de log, probar conexión |
+| Popup de ajustes | Selector de modelo de radio, puerto COM, indicativo, locator, puerto de log, probar conexión |
+
+---
+
+## Radios soportadas
+
+Actualmente soporta todos los radios Yaesu que usan el protocolo ASCII CAT estándar. Selecciona tu modelo en el popup — los baudios correctos se rellenan automáticamente.
+
+| Radio | Baudios por defecto | Conexión |
+|---|---|---|
+| FT-DX10 | 38400 | USB (Silicon Labs CP2105) |
+| FTX-1 | 38400 | USB (Silicon Labs CP2105) |
+| FT-710 | 38400 | USB (Silicon Labs CP2105) |
+| FTDX101MP/D | 38400 | USB + RS-232C |
+| FT-991A | 4800 | USB (Silicon Labs CP210x) |
+| FT-891 | 9600 | USB (Silicon Labs CP210x) |
+| FTDX3000 | 4800 | RS-232C (adaptador USB necesario) |
+| FTDX1200 | 4800 | RS-232C + USB |
+
+Usa **Custom / Other** para cualquier radio Yaesu no listado — configura los baudios manualmente.
 
 ---
 
@@ -51,7 +70,7 @@ El registro incluye indicativo, frecuencia, banda, modo, **SOTA_REF**, nombre y 
 
 - **Windows** + **Google Chrome**
 - **Python 3.6+** con `pyserial` en tu `PATH`
-- **Yaesu FT-DX10** en un puerto serie/USB (probado en COM7 via Silicon Labs CP2105)
+- **Radio Yaesu** (ver Radios soportadas) conectado via USB o RS-232C serie
 - **HRD Logbook** (opcional) con reenvío UDP de QSO activado en el puerto 2333
 
 ---
@@ -78,8 +97,17 @@ Abre el archivo `.json` y establece:
 "allowed_origins": ["chrome-extension://TU_ID_DE_EXTENSION/"]
 ```
 
-### 4 — Establecer tu indicativo y locator
-Haz clic en el icono de SOTA Hunter en la barra de herramientas → rellena el indicativo, locator y puerto COM → **Guardar**.
+### 4 — Configurar los ajustes
+Haz clic en el icono de SOTA Hunter en la barra de herramientas para abrir el popup de ajustes:
+
+![Ajustes de la extensión](screenshots/extension%20settings.png)
+
+- **Radio Model** — selecciona tu radio; los baudios se rellenan automáticamente
+- **COM Port** — puerto serie de tu radio (consultar el Administrador de dispositivos)
+- **My Callsign / Grid Square** — incluidos en cada QSO registrado
+- **HRD Log Port** — puerto UDP para HRD Logbook (por defecto: 2333)
+
+Haz clic en **Test Connection** para verificar que el radio responde.
 
 ### 5 — Activar el reenvío QSO de HRD (para Log)
 HRD Logbook → **Herramientas → Configurar → Reenvío QSO** → activar *"Recibir notificaciones QSO vía UDP de otras aplicaciones (WSJT-X)"*.
@@ -100,7 +128,7 @@ HRD Logbook → **Herramientas → Configurar → Reenvío QSO** → activar *"R
 ## Arquitectura
 
 ```
-SOTAwatch DOM → content.js → background.js → bridge.py → cat_client.py  → FT-DX10 (CAT)
+SOTAwatch DOM → content.js → background.js → bridge.py → cat_client.py  → Radio Yaesu (CAT)
                                                         → adif_logger.py → HRD Logbook (UDP)
 ```
 
