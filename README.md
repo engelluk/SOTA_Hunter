@@ -1,5 +1,7 @@
 # SOTA Hunter
 
+🌐 [Deutsch](README.de.md) · [Français](README.fr.md) · [Español](README.es.md)
+
 **One click to tune. One click to log. Never leave SOTAwatch.**
 
 SOTA Hunter is a Chrome extension that adds **Tune** and **Log** buttons directly into the [SOTAwatch3](https://sotawatch.sota.org.uk/) spots table — so you can work a summit activation without touching your keyboard or switching windows.
