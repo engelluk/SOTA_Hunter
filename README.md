@@ -40,6 +40,7 @@ The logged record includes callsign, frequency, band, mode, **SOTA_REF**, summit
 | Feature | Detail |
 |---|---|
 | Direct CAT tuning | 8 Yaesu models supported — baud rate auto-configured per model |
+| Auto COM port release | Serial port freed automatically when the SOTAwatch tab is closed |
 | HRD Logbook integration | UDP ADIF to port 2333 — same as WSJT-X/JTDX |
 | Activator deduplication | Shows only the latest spot per activator — cuts clutter |
 | Summit enrichment | Fetches name & altitude from SOTA API, cached for speed |

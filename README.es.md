@@ -38,6 +38,7 @@ El registro incluye indicativo, frecuencia, banda, modo, **SOTA_REF**, nombre y 
 | Función | Detalle |
 |---|---|
 | Sintonización CAT directa | 8 modelos Yaesu soportados — baudios configurados automáticamente por modelo |
+| Liberación automática del puerto COM | Puerto serie liberado automáticamente al cerrar la pestaña de SOTAwatch |
 | Integración con HRD Logbook | UDP ADIF en el puerto 2333 — igual que WSJT-X/JTDX |
 | Deduplicación de activadores | Muestra solo el spot más reciente por activador — reduce el desorden |
 | Enriquecimiento de cimas | Obtiene nombre y altitud de la API SOTA, almacenado en caché |

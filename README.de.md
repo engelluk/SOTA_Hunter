@@ -38,6 +38,7 @@ Der geloggte Datensatz enthält Rufzeichen, Frequenz, Band, Betriebsart, **SOTA_
 | Funktion | Details |
 |---|---|
 | Direktes CAT-Abstimmen | 8 Yaesu-Modelle unterstützt — Baudrate wird automatisch gesetzt |
+| Automatische COM-Port-Freigabe | Serieller Port wird freigegeben, wenn der SOTAwatch-Tab geschlossen wird |
 | HRD Logbook-Integration | UDP ADIF auf Port 2333 — wie WSJT-X/JTDX |
 | Aktivierer-Deduplizierung | Zeigt nur den neuesten Spot pro Aktivierer — weniger Unübersichtlichkeit |
 | Gipfelanreicherung | Ruft Name & Höhe von der SOTA-API ab, wird gecacht |

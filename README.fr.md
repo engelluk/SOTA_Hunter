@@ -38,6 +38,7 @@ L'enregistrement loggé comprend l'indicatif, la fréquence, la bande, le mode, 
 | Fonctionnalité | Détail |
 |---|---|
 | Syntonisation CAT directe | 8 modèles Yaesu supportés — débit configuré automatiquement par modèle |
+| Libération automatique du port COM | Port série libéré automatiquement à la fermeture de l'onglet SOTAwatch |
 | Intégration HRD Logbook | UDP ADIF sur le port 2333 — identique à WSJT-X/JTDX |
 | Déduplication des activateurs | N'affiche que le spot le plus récent par activateur — réduit l'encombrement |
 | Enrichissement des sommets | Récupère le nom et l'altitude depuis l'API SOTA, mis en cache |
