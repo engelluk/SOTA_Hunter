@@ -12,7 +12,7 @@ SOTA Hunter is a Chrome extension that adds **Tune** and **Log** buttons directl
 
 | Without SOTA Hunter | With SOTA Hunter |
 |---|---|
-| ![SOTAwatch without extension](screenshots/without%20extension.png) | ![SOTAwatch with extension](screenshots/with%20enxtension.png) |
+| ![SOTAwatch without extension](screenshots/without%20extension.png) | ![SOTAwatch with extension](screenshots/with%20extension.png) |
 
 ---
 
@@ -65,14 +65,14 @@ Currently supports all Yaesu radios using the standard ASCII CAT protocol. Selec
 | FTDX3000 | 4800 | RS-232C (USB adapter needed) |
 | FTDX1200 | 4800 | RS-232C + USB |
 
-Use **Custom / Other** for any Yaesu radio not listed — set the baud rate manually.
+Use **Custom / Other** for any Yaesu radio not listed — set the baud rate manually (typical values: 4800, 9600, 38400).
 
 ---
 
 ## Requirements
 
 - **Windows** + **Google Chrome**
-- **Python 3.6+** with `pyserial` on your `PATH`
+- **Python 3.6+** with `pyserial` — verify with `python --version` and `pip install pyserial` in Command Prompt
 - **Yaesu radio** (see Supported Radios above) connected via USB or RS-232C serial
 - **HRD Logbook** (optional) with UDP QSO Forwarding enabled on port 2333
 
@@ -87,7 +87,7 @@ Double-click `native-host\install.bat`. This writes one registry key so Chrome c
 1. Open `chrome://extensions/`
 2. Enable **Developer mode**
 3. Click **Load unpacked** → select the `extension/` folder
-4. Note the extension ID shown on the card
+4. Note the extension ID shown on the card (a string of 32 lowercase letters, e.g. `abcdefghijklmnopqrstuvwxyzabcdef`)
 
 ### 3 — Configure the native host manifest
 Copy the template:
