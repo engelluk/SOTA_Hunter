@@ -1,6 +1,6 @@
-# Contributing to SOTA Hunter
+# Contributing to SOTA Chaser
 
-This document outlines the development workflow for SOTA Hunter.
+This document outlines the development workflow for SOTA Chaser.
 
 ---
 
@@ -39,7 +39,7 @@ python -c "from config import VERSION; print('Version:', VERSION)"
 
 # JSON manifest validation
 python -c "import json; json.load(open('extension/manifest.json')); print('OK')"
-python -c "import json; json.load(open('native-host/com.sotahunter.bridge.json')); print('OK')"
+python -c "import json; json.load(open('native-host/com.sotachaser.bridge.json')); print('OK')"
 
 # Manual browser testing (when UI/content script changes are made)
 # 1. Reload extension at chrome://extensions/
@@ -174,7 +174,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
 
 ### Native Host Not Connecting
 - Run `native-host/install.bat` to register the host
-- Verify extension ID in `native-host/com.sotahunter.bridge.json`
+- Verify extension ID in `native-host/com.sotachaser.bridge.json`
 - Check `native-host/bridge.log` for error output
 - Ensure Python is on the system PATH
 
@@ -206,7 +206,7 @@ python -c "from config import VERSION; print(f'Setup complete! Version: {VERSION
 # 5. Load extension in Chrome
 # chrome://extensions/ > Developer mode > Load unpacked > select extension/
 
-# 6. Update extension ID in native-host/com.sotahunter.bridge.json
+# 6. Update extension ID in native-host/com.sotachaser.bridge.json
 ```
 
 ---

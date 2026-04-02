@@ -1,4 +1,4 @@
-# SOTA Hunter — Project Information
+# SOTA Chaser — Project Information
 
 **Current Version:** 1.0.0
 **Status:** Active Development
@@ -20,7 +20,7 @@
 
 ## Project Overview
 
-SOTA Hunter is a Chrome extension + Python native messaging host that adds **Tune** and **Log** buttons to every spot row on [SOTAwatch](https://sotawatch.sota.org.uk/).
+SOTA Chaser is a Chrome extension + Python native messaging host that adds **Tune** and **Log** buttons to every spot row on [SOTAwatch](https://sotawatch.sota.org.uk/).
 
 - **Tune** (blue) — sets the Yaesu FT-DX10's VFO frequency and mode via direct serial CAT on COM7
 - **Log** (purple) — sends a complete SOTA chase QSO to HRD Logbook via UDP ADIF (port 2333)
@@ -80,7 +80,7 @@ SOTA_Hunter/
     ├── adif_logger.py                     ADIF record builder + UDP sender
     ├── hrd_client.py                      Legacy HRD TCP client (kept as reference)
     ├── test_cat.py                        30-case CAT client test suite
-    ├── com.sotahunter.bridge.json.template  Native host manifest template
+    ├── com.sotachaser.bridge.json.template  Native host manifest template
     └── install.bat                        One-time Windows registry setup
 ```
 
@@ -117,7 +117,7 @@ python native-host/test_cat.py
 
 # Validate JSON manifests
 python -c "import json; json.load(open('extension/manifest.json')); print('OK')"
-python -c "import json; json.load(open('native-host/com.sotahunter.bridge.json.template')); print('OK')"
+python -c "import json; json.load(open('native-host/com.sotachaser.bridge.json.template')); print('OK')"
 
 # Version consistency check
 python -c "from config import VERSION; print('Version:', VERSION)"
@@ -148,7 +148,7 @@ Before committing, verify:
 - [ ] `test_cat.py` passes (if CAT client changed)
 - [ ] JSON manifests are valid
 - [ ] `README.md` updated if user-visible behaviour changed
-- [ ] No `__pycache__/`, `bridge.log`, or `com.sotahunter.bridge.json` in staged files
+- [ ] No `__pycache__/`, `bridge.log`, or `com.sotachaser.bridge.json` in staged files
 - [ ] Commit message is imperative, explains *why*, includes Co-Authored-By line
 
 ---

@@ -1,8 +1,8 @@
-# AI Assistant Instructions - SOTA Hunter
+# AI Assistant Instructions - SOTA Chaser
 
 **READ THIS FIRST when starting a new session on this project.**
 
-This document provides quick-start instructions for AI assistants working on SOTA Hunter.
+This document provides quick-start instructions for AI assistants working on SOTA Chaser.
 
 ---
 
@@ -77,7 +77,7 @@ SOTAwatch page          Chrome Extension           Native Host (Python)       HR
 - `native-host/bridge.py` - Chrome native messaging stdin/stdout bridge
 - `native-host/hrd_client.py` - HRD Rig Control TCP protocol client
 - `native-host/bridge.bat` - Launcher script
-- `native-host/com.sotahunter.bridge.json` - Native messaging manifest
+- `native-host/com.sotachaser.bridge.json` - Native messaging manifest
 - `native-host/install.bat` - Windows registry setup
 
 **Project Root:**
@@ -174,7 +174,7 @@ Description
 
 ---
 
-## Testing Commands for SOTA Hunter
+## Testing Commands for SOTA Chaser
 
 Run these before committing:
 
@@ -194,7 +194,7 @@ python -c "import sys; sys.path.insert(0, 'native-host'); from hrd_client import
 python -c "import json; json.load(open('extension/manifest.json')); print('manifest.json: OK')"
 
 # 5. Validate native host manifest
-python -c "import json; json.load(open('native-host/com.sotahunter.bridge.json')); print('native manifest: OK')"
+python -c "import json; json.load(open('native-host/com.sotachaser.bridge.json')); print('native manifest: OK')"
 ```
 
 ### Manual Browser Testing (when UI changes are made)
@@ -329,7 +329,7 @@ EOF
 ### Native Messaging
 - Chrome auto-launches bridge.py via bridge.bat on demand
 - Messages: 4-byte LE length prefix + UTF-8 JSON (Chrome protocol)
-- Registry key at HKCU\Software\Google\Chrome\NativeMessagingHosts\com.sotahunter.bridge
+- Registry key at HKCU\Software\Google\Chrome\NativeMessagingHosts\com.sotachaser.bridge
 
 ---
 

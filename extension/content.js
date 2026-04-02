@@ -1,5 +1,5 @@
 /**
- * SOTA Hunter - Content Script for SOTAwatch
+ * SOTA Chaser - Content Script for SOTAwatch
  *
  * Observes the SOTAwatch SPA DOM for spot rows, deduplicates activators
  * (showing only the latest spot per callsign), and injects "Tune" buttons
@@ -27,7 +27,7 @@
       if (!response.ok) return;
       spotsData = await response.json();
     } catch (e) {
-      console.warn("SOTA Hunter: Failed to fetch spots from API", e);
+      console.warn("SOTA Chaser: Failed to fetch spots from API", e);
     }
   }
 
@@ -53,7 +53,7 @@
       summitCache.set(summitRef, details);
       return details;
     } catch (e) {
-      console.warn("SOTA Hunter: Failed to fetch summit details for", summitRef, e);
+      console.warn("SOTA Chaser: Failed to fetch summit details for", summitRef, e);
       return null;
     }
   }

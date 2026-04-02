@@ -1,14 +1,14 @@
-# SOTA Hunter
+# SOTA Chaser
 
 **Un clic para sintonizar. Un clic para registrar. Nunca salgas de SOTAwatch.**
 
-SOTA Hunter es una extensión de Chrome que añade botones **Tune** y **Log** directamente en la tabla de spots de [SOTAwatch3](https://sotawatch.sota.org.uk/) — para trabajar una activación de cima sin tocar el teclado ni cambiar de ventana.
+SOTA Chaser es una extensión de Chrome que añade botones **Tune** y **Log** directamente en la tabla de spots de [SOTAwatch3](https://sotawatch.sota.org.uk/) — para trabajar una activación de cima sin tocar el teclado ni cambiar de ventana.
 
 ---
 
 ## Antes / Después
 
-| Sin SOTA Hunter | Con SOTA Hunter |
+| Sin SOTA Chaser | Con SOTA Chaser |
 |---|---|
 | ![SOTAwatch sin extensión](screenshots/without%20extension.png) | ![SOTAwatch con extensión](screenshots/with%20extension.png) |
 
@@ -90,7 +90,7 @@ Haz doble clic en `native-host\install.bat`. Esto escribe una clave de registro 
 ### 3 — Configurar el manifiesto del host nativo
 Copia la plantilla:
 ```
-native-host\com.sotahunter.bridge.json.template  →  native-host\com.sotahunter.bridge.json
+native-host\com.sotachaser.bridge.json.template  →  native-host\com.sotachaser.bridge.json
 ```
 Abre el archivo `.json` y establece:
 ```json
@@ -99,7 +99,7 @@ Abre el archivo `.json` y establece:
 ```
 
 ### 4 — Configurar los ajustes
-Haz clic en el icono de SOTA Hunter en la barra de herramientas para abrir el popup de ajustes:
+Haz clic en el icono de SOTA Chaser en la barra de herramientas para abrir el popup de ajustes:
 
 ![Ajustes de la extensión](screenshots/extension%20settings.png)
 

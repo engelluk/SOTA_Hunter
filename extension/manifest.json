@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "SOTA Hunter",
+  "name": "SOTA Chaser",
   "version": "1.0.0",
   "description": "Adds Tune and Log buttons to SOTAwatch spots. Tunes your radio via direct CAT and logs SOTA chase QSOs to HRD Logbook via UDP ADIF.",
   "permissions": [

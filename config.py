@@ -1,14 +1,14 @@
 """
-Configuration and version information for SOTA Hunter
+Configuration and version information for SOTA Chaser
 """
 
 # Application version (Semantic Versioning: MAJOR.MINOR.PATCH)
 VERSION = "1.0.0"
-APP_NAME = "SOTA Hunter"
+APP_NAME = "SOTA Chaser"
 APP_TITLE = f"{APP_NAME} v{VERSION}"
 
 # Native messaging host identifier
-NATIVE_HOST_NAME = "com.sotahunter.bridge"
+NATIVE_HOST_NAME = "com.sotachaser.bridge"
 
 # HRD Rig Control defaults
 DEFAULT_HRD_HOST = "127.0.0.1"

@@ -1,6 +1,6 @@
 {
-  "name": "com.sotahunter.bridge",
-  "description": "SOTA Hunter - native messaging bridge for Chrome",
+  "name": "com.sotachaser.bridge",
+  "description": "SOTA Chaser - native messaging bridge for Chrome",
   "path": "C:\\PATH\\TO\\native-host\\bridge.bat",
   "type": "stdio",
   "allowed_origins": [

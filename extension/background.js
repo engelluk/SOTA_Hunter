@@ -1,5 +1,5 @@
 /**
- * SOTA Hunter - Background Service Worker
+ * SOTA Chaser - Background Service Worker
  *
  * Bridges messages between the content script and the native messaging host.
  * Manages the native messaging port lifecycle with reconnection support.
@@ -18,7 +18,7 @@ function connectNativeHost() {
   }
 
   try {
-    nativePort = chrome.runtime.connectNative("com.sotahunter.bridge");
+    nativePort = chrome.runtime.connectNative("com.sotachaser.bridge");
 
     nativePort.onMessage.addListener((response) => {
       console.log("Native host response:", response);

@@ -1,5 +1,5 @@
 /**
- * SOTA Hunter - Popup Settings
+ * SOTA Chaser - Popup Settings
  */
 
 const modelSelect = document.getElementById("cat-model");

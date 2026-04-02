@@ -1,14 +1,14 @@
-# SOTA Hunter
+# SOTA Chaser
 
 **Ein Klick zum Abstimmen. Ein Klick zum Loggen. SOTAwatch nie verlassen.**
 
-SOTA Hunter ist eine Chrome-Erweiterung, die **Tune**- und **Log**-Schaltflächen direkt in die [SOTAwatch3](https://sotawatch.sota.org.uk/)-Spotstabelle einfügt — damit du eine Gipfelaktivierung arbeiten kannst, ohne die Tastatur anzufassen oder das Fenster zu wechseln.
+SOTA Chaser ist eine Chrome-Erweiterung, die **Tune**- und **Log**-Schaltflächen direkt in die [SOTAwatch3](https://sotawatch.sota.org.uk/)-Spotstabelle einfügt — damit du eine Gipfelaktivierung arbeiten kannst, ohne die Tastatur anzufassen oder das Fenster zu wechseln.
 
 ---
 
 ## Vorher / Nachher
 
-| Ohne SOTA Hunter | Mit SOTA Hunter |
+| Ohne SOTA Chaser | Mit SOTA Chaser |
 |---|---|
 | ![SOTAwatch ohne Erweiterung](screenshots/without%20extension.png) | ![SOTAwatch mit Erweiterung](screenshots/with%20extension.png) |
 
@@ -90,7 +90,7 @@ Aktuell werden alle Yaesu-Radios mit dem Standard-ASCII-CAT-Protokoll unterstüt
 ### 3 — Native-Host-Manifest konfigurieren
 Vorlage kopieren:
 ```
-native-host\com.sotahunter.bridge.json.template  →  native-host\com.sotahunter.bridge.json
+native-host\com.sotachaser.bridge.json.template  →  native-host\com.sotachaser.bridge.json
 ```
 Die `.json`-Datei öffnen und einstellen:
 ```json
@@ -99,7 +99,7 @@ Die `.json`-Datei öffnen und einstellen:
 ```
 
 ### 4 — Einstellungen konfigurieren
-SOTA Hunter-Toolbar-Symbol klicken, um das Einstellungs-Popup zu öffnen:
+SOTA Chaser-Toolbar-Symbol klicken, um das Einstellungs-Popup zu öffnen:
 
 ![Erweiterungseinstellungen](screenshots/extension%20settings.png)
 

@@ -1,4 +1,4 @@
-# CLAUDE.md — SOTA Hunter Project Instructions
+# CLAUDE.md — SOTA Chaser Project Instructions
 
 ## What This Project Is
 
@@ -70,7 +70,7 @@ background.js tracks requests with a counter and routes responses by action type
 - Content script: IIFE with `"use strict"`, no globals leaking
 - Async request/response: `pendingCallbacks` Map keyed by `requestCounter`
 - Visual feedback on buttons: pending (orange) → success (green) / error (red), auto-revert 3-5s
-- Python: standard logging to `bridge.log`, `logger = logging.getLogger("sotahunter.xxx")`
+- Python: standard logging to `bridge.log`, `logger = logging.getLogger("sotachaser.xxx")`
 - No frameworks — vanilla JS in the extension, stdlib Python in native host (only dependency: `pyserial`)
 
 ## Version Management
@@ -99,6 +99,6 @@ python native-host/test_cat.py
 
 # JSON manifests valid
 python -c "import json; json.load(open('extension/manifest.json')); print('OK')"
-python -c "import json; json.load(open('native-host/com.sotahunter.bridge.json.template')); print('OK')"
+python -c "import json; json.load(open('native-host/com.sotachaser.bridge.json.template')); print('OK')"
 ```
 

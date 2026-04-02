@@ -5,7 +5,7 @@ import struct
 import logging
 import time
 
-logger = logging.getLogger("sotahunter.hrd")
+logger = logging.getLogger("sotachaser.hrd")
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 7809

@@ -7,7 +7,7 @@ datagram to HRD Logbook's QSO Forwarding port (default 2333).
 import socket
 import logging
 
-logger = logging.getLogger("sotahunter.adif_logger")
+logger = logging.getLogger("sotachaser.adif_logger")
 
 # Band plan: (lower MHz, upper MHz, band label)
 BAND_PLAN = [
@@ -78,7 +78,7 @@ def build_adif_record(call, qso_date, time_on, freq, band, mode,
     """
     parts = [
         "<adif_ver:5>3.1.1",
-        "<programid:11>SOTA Hunter",
+        "<programid:11>SOTA Chaser",
         "<EOH>",
         _adif_field("CALL", call),
         _adif_field("QSO_DATE", qso_date),

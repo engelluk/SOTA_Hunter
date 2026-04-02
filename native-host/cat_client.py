@@ -4,7 +4,7 @@ import serial
 import logging
 import time
 
-logger = logging.getLogger("sotahunter.cat")
+logger = logging.getLogger("sotachaser.cat")
 
 DEFAULT_PORT = "COM7"
 DEFAULT_BAUD = 38400

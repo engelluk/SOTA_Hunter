@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Chrome Native Messaging host for SOTA Hunter.
+"""Chrome Native Messaging host for SOTA Chaser.
 
 Reads JSON messages from stdin (4-byte LE length prefix + JSON),
 forwards tune requests to the radio via direct serial CAT, and
@@ -19,7 +19,7 @@ logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
-logger = logging.getLogger("sotahunter.bridge")
+logger = logging.getLogger("sotachaser.bridge")
 
 # Windows requires binary mode for stdin/stdout
 if sys.platform == "win32":
@@ -156,7 +156,7 @@ def handle_log(request):
 
 
 def main():
-    logger.info("SOTA Hunter bridge started")
+    logger.info("SOTA Chaser bridge started")
     while True:
         message = read_message()
         if message is None:
@@ -182,7 +182,7 @@ def main():
     # Clean up serial port
     if _client:
         _client.close()
-    logger.info("SOTA Hunter bridge exiting")
+    logger.info("SOTA Chaser bridge exiting")
 
 
 if __name__ == "__main__":
