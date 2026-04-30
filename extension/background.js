@@ -6,8 +6,28 @@
  */
 
 let nativePort = null;
-let pendingRequests = new Map(); // requestId -> {resolve, reject, tabId}
+let pendingRequests = new Map(); // requestId -> {resolve, tabId, originalRequestId, action}
 let requestCounter = 0;
+
+function completePendingRequest(requestId, response) {
+  const pending = pendingRequests.get(requestId);
+  if (!pending) {
+    return;
+  }
+
+  pendingRequests.delete(requestId);
+
+  if (pending.tabId !== null) {
+    const responseType = pending.action === "log" ? "logResponse" : "tuneResponse";
+    chrome.tabs.sendMessage(pending.tabId, {
+      type: responseType,
+      requestId: pending.originalRequestId,
+      ...response,
+    });
+  } else {
+    pending.resolve(response);
+  }
+}
 
 /**
  * Connect to the native messaging host.
@@ -23,24 +43,10 @@ function connectNativeHost() {
     nativePort.onMessage.addListener((response) => {
       console.log("Native host response:", response);
 
-      // Route response back to the appropriate requester
-      // Since native messaging is sequential, resolve the oldest pending request
+      // Native messaging is FIFO, so resolve the oldest pending request.
       if (pendingRequests.size > 0) {
-        const [requestId, pending] = pendingRequests.entries().next().value;
-        pendingRequests.delete(requestId);
-
-        if (pending.tabId !== null) {
-          // Response to a content script request — route by action type
-          const responseType = pending.action === "log" ? "logResponse" : "tuneResponse";
-          chrome.tabs.sendMessage(pending.tabId, {
-            type: responseType,
-            requestId: pending.originalRequestId,
-            ...response,
-          });
-        } else {
-          // Response to a popup test request
-          pending.resolve(response);
-        }
+        const [requestId] = pendingRequests.entries().next().value;
+        completePendingRequest(requestId, response);
       }
     });
 
@@ -48,21 +54,9 @@ function connectNativeHost() {
       const error = chrome.runtime.lastError?.message || "Native host disconnected";
       console.warn("Native host disconnected:", error);
 
-      // Reject all pending requests
-      for (const [requestId, pending] of pendingRequests) {
-        const errorResponse = { success: false, error };
-        if (pending.tabId !== null) {
-          const responseType = pending.action === "log" ? "logResponse" : "tuneResponse";
-          chrome.tabs.sendMessage(pending.tabId, {
-            type: responseType,
-            requestId: pending.originalRequestId,
-            ...errorResponse,
-          });
-        } else {
-          pending.resolve(errorResponse);
-        }
+      for (const requestId of Array.from(pendingRequests.keys())) {
+        completePendingRequest(requestId, { success: false, error });
       }
-      pendingRequests.clear();
       nativePort = null;
     });
 
@@ -81,11 +75,10 @@ function sendToNativeHost(message, tabId, originalRequestId) {
   return new Promise((resolve) => {
     const port = connectNativeHost();
     if (!port) {
-      const errorResponse = {
+      resolve({
         success: false,
         error: "Cannot connect to native host. Is install.bat run?",
-      };
-      resolve(errorResponse);
+      });
       return;
     }
 
@@ -98,7 +91,7 @@ function sendToNativeHost(message, tabId, originalRequestId) {
       action,
     });
 
-    // Fetch CAT serial settings and include them in the message
+    // Fetch CAT serial settings and include them in the message.
     chrome.storage.sync.get({ cat_port: "COM7", cat_baud: 38400 }, (settings) => {
       const fullMessage = {
         ...message,
@@ -106,7 +99,21 @@ function sendToNativeHost(message, tabId, originalRequestId) {
         cat_baud: settings.cat_baud,
       };
       console.log("Sending to native host:", fullMessage);
-      port.postMessage(fullMessage);
+
+      if (port !== nativePort) {
+        return;
+      }
+
+      try {
+        port.postMessage(fullMessage);
+      } catch (e) {
+        const error = e?.message || "Native host disconnected";
+        console.warn("Failed to send to native host:", error);
+        completePendingRequest(requestId, { success: false, error });
+        if (port === nativePort) {
+          nativePort = null;
+        }
+      }
     });
   });
 }
@@ -116,21 +123,20 @@ function sendToNativeHost(message, tabId, originalRequestId) {
  */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "tune") {
-    // From content script: tune to a frequency
+    // From content script: tune to a frequency.
     const tabId = sender.tab?.id ?? null;
     sendToNativeHost(
       { action: "tune", frequency: message.frequency, mode: message.mode },
       tabId,
       message.requestId
     );
-    // Response will be sent asynchronously via chrome.tabs.sendMessage
+    // Response will be sent asynchronously via chrome.tabs.sendMessage.
     return false;
   }
 
   if (message.type === "log") {
-    // From content script: log a QSO to HRD Logbook via UDP ADIF
+    // From content script: log a QSO to HRD Logbook via UDP ADIF.
     const tabId = sender.tab?.id ?? null;
-    // Fetch logging settings and include them in the native host message
     chrome.storage.sync.get(
       { my_callsign: "", my_gridsquare: "", log_port: 2333 },
       (settings) => {
@@ -157,11 +163,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === "testConnection") {
-    // From popup: test the HRD connection
+    // From popup: test the native host and CAT connection.
     sendToNativeHost({ action: "test" }, null, null).then((response) => {
       sendResponse(response);
     });
-    return true; // Keep the message channel open for async response
+    return true; // Keep the message channel open for async response.
   }
 
   return false;
@@ -174,17 +180,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
  */
 async function releasePortIfUnused() {
   if (!nativePort) return;
-  if (pendingRequests.size > 0) return; // don't interrupt an in-flight request
+  if (pendingRequests.size > 0) return; // Do not interrupt an in-flight request.
   const tabs = await chrome.tabs.query({ url: "*://sotawatch.sota.org.uk/*" });
   if (tabs.length === 0) {
-    nativePort.disconnect(); // triggers onDisconnect → nativePort = null
+    nativePort.disconnect(); // Triggers onDisconnect and clears nativePort.
   }
 }
 
-// Free the COM port when the last SOTAwatch tab is closed
+// Free the COM port when the last SOTAwatch tab is closed.
 chrome.tabs.onRemoved.addListener(() => releasePortIfUnused());
 
-// Free the COM port when the user navigates away from SOTAwatch in all open tabs
+// Free the COM port when the user navigates away from SOTAwatch in all open tabs.
 chrome.tabs.onUpdated.addListener((_tabId, changeInfo) => {
   if (changeInfo.url) releasePortIfUnused();
 });
